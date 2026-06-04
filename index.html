@@ -1,0 +1,1475 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<link rel="apple-touch-icon" href="icon-study.png">
+<link rel="manifest" href="manifest-study.json">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="default">
+<meta name="apple-mobile-web-app-title" content="学習管理">
+<meta name="theme-color" content="#2b7de9">
+<title>学習スケジュール</title>
+<style>
+:root{
+  --bg:#f4f6f9; --card:#ffffff; --ink:#1c2733; --sub:#5b6b7c; --line:#e3e8ee;
+  --accent:#2b7de9; --accent-soft:#e8f1fd; --green:#22a06b; --green-soft:#e6f6ef;
+  --red:#e5484d; --red-soft:#fdecec; --amber:#b7791f; --amber-soft:#fdf3e0;
+  --radius:14px;
+}
+*{box-sizing:border-box; -webkit-tap-highlight-color:transparent}
+body{margin:0; font-family:-apple-system,BlinkMacSystemFont,"Hiragino Sans","Yu Gothic UI",sans-serif; background:var(--bg); color:var(--ink); padding-bottom:76px;}
+.wrap{max-width:720px; margin:0 auto; padding:14px 14px 0;}
+header.app{padding:16px 4px 8px;}
+header.app h1{font-size:19px; margin:0 0 2px;}
+header.app .sub{font-size:12.5px; color:var(--sub);}
+.card{background:var(--card); border:1px solid var(--line); border-radius:var(--radius); padding:14px 16px; margin:0 0 12px; box-shadow:0 1px 2px rgba(16,30,54,.04);}
+.card h2{font-size:15px; margin:0 0 10px; display:flex; align-items:center; gap:6px;}
+.row{display:flex; align-items:center; gap:8px; flex-wrap:wrap;}
+.spread{display:flex; justify-content:space-between; align-items:center; gap:8px;}
+button{font:inherit; border:1px solid var(--line); background:#fff; color:var(--ink); border-radius:10px; padding:8px 12px; cursor:pointer;}
+button.primary{background:var(--accent); border-color:var(--accent); color:#fff; font-weight:600;}
+button.ghost{background:transparent; border:none; color:var(--accent); padding:4px 6px;}
+button.danger{color:var(--red);}
+button.mini{padding:4px 10px; font-size:13px; border-radius:8px;}
+input,select,textarea{font:inherit; border:1px solid var(--line); border-radius:9px; padding:8px 10px; background:#fff; color:var(--ink); max-width:100%;}
+input[type=number]{width:84px;} input[type=date]{width:150px;}
+textarea{width:100%; min-height:54px; resize:vertical;}
+.tag{display:inline-block; font-size:11.5px; padding:2px 8px; border-radius:99px; background:var(--accent-soft); color:var(--accent); font-weight:600;}
+.tag.green{background:var(--green-soft); color:var(--green);}
+.tag.red{background:var(--red-soft); color:var(--red);}
+.tag.amber{background:var(--amber-soft); color:var(--amber);}
+.big{font-size:26px; font-weight:700;}
+.muted{color:var(--sub); font-size:12.5px;}
+.bar{height:10px; background:#edf1f6; border-radius:99px; overflow:hidden;}
+.bar>i{display:block; height:100%; background:var(--accent); border-radius:99px; transition:width .25s;}
+.bar>i.g{background:var(--green);}
+.task{display:flex; align-items:center; gap:10px; padding:10px 0; border-top:1px solid var(--line);}
+.task:first-of-type{border-top:none;}
+.task .info{flex:1; min-width:0;}
+.task .name{font-size:14px; font-weight:600;}
+.task .meta{font-size:12px; color:var(--sub); margin-top:2px;}
+.step{display:flex; align-items:center; gap:6px;}
+.step button{width:34px; height:34px; padding:0; border-radius:9px; font-size:18px; line-height:1;}
+.step .num{min-width:54px; text-align:center; font-weight:700;}
+.done .name{color:var(--green);}
+.weekgrid{display:grid; grid-template-columns:repeat(7,1fr); gap:6px; text-align:center;}
+.wd{border:1px solid var(--line); border-radius:10px; padding:8px 2px; font-size:12px; background:#fff;}
+.wd .d{font-weight:700; font-size:13px;}
+.wd .m{font-size:11px; color:var(--sub);}
+.wd.ok{background:var(--green-soft); border-color:#bfe7d4;}
+.wd.ng{background:var(--red-soft); border-color:#f6c8ca;}
+.wd.today{outline:2px solid var(--accent);}
+.cal{display:grid; grid-template-columns:repeat(7,1fr); gap:4px; text-align:center; font-size:12.5px;}
+.cal .h{color:var(--sub); font-size:11px; padding:2px 0;}
+.cal .c{border:1px solid var(--line); border-radius:8px; padding:5px 0 4px; min-height:44px; background:#fff;}
+.cal .c .n{font-size:11.5px; color:var(--sub);}
+.cal .c .mk{font-size:14px; line-height:1.3;}
+.cal .c.off{opacity:.35;}
+.cal .c.ok{background:var(--green-soft);} .cal .c.ng{background:var(--red-soft);}
+.cal .c.exam{border-color:var(--amber); border-width:2px;}
+.choice{display:block; width:100%; text-align:left; padding:11px 13px; margin:7px 0; border-radius:11px; border:1.5px solid var(--line); background:#fff; font-size:14.5px; cursor:pointer;}
+.choice:hover{border-color:var(--accent);}
+.fbpanel{border-radius:12px; padding:12px 14px; margin:10px 0;}
+.fbpanel.ok{background:var(--green-soft); border:1px solid #bfe7d4;}
+.fbpanel.ng{background:var(--red-soft); border:1px solid #f6c8ca;}
+.qprog{font-size:12.5px; color:var(--sub); margin-bottom:6px;}
+.qtext{font-size:16px; font-weight:700; margin:6px 0 10px; line-height:1.55;}
+.blockrow{display:flex; align-items:center; gap:10px; padding:9px 0; border-top:1px solid var(--line);}
+.blockrow:first-of-type{border-top:none;}
+.lsname{font-size:13px; font-weight:700; color:var(--accent); margin:14px 0 2px;}
+.ptlist{background:#f7fafc; border:1px solid var(--line); border-radius:10px; padding:10px 14px; font-size:13.5px; line-height:1.8;}
+.dxbox{margin-top:8px;}
+.dxbox summary{cursor:pointer; color:var(--accent); font-size:13px; font-weight:700; list-style-position:inside;}
+.dxbody{background:#fff; border:1px solid var(--line); border-radius:8px; padding:9px 12px; font-size:12.5px; line-height:1.75; margin-top:6px; color:var(--ink);}
+.mnitem{border:1px solid var(--line); border-radius:11px; padding:10px 12px; margin:8px 0; background:#fff;}
+.ls-seg{display:flex; gap:8px; margin-bottom:10px;}
+.ls-seg button{flex:1; padding:10px 0; border-radius:11px; border:1.5px solid var(--line); background:#fff; font:inherit; font-size:14px; font-weight:700; color:var(--sub); cursor:pointer;}
+.ls-seg button.act{background:var(--accent); border-color:var(--accent); color:#fff;}
+.ls-chips{display:flex; flex-wrap:wrap; gap:7px;}
+.ls-chip{padding:6px 13px; border-radius:99px; border:1.5px solid var(--line); background:#fff; font:inherit; font-size:12.5px; font-weight:600; color:var(--sub); cursor:pointer;}
+.ls-chip.act{background:var(--accent-soft); border-color:var(--accent); color:var(--accent);}
+.ls-now{text-align:center; padding:14px 8px 4px;}
+.ls-now .en{font-size:27px; font-weight:800; line-height:1.3; word-break:break-word;}
+.ls-now .ja{font-size:15px; color:var(--sub); margin-top:7px; min-height:22px; line-height:1.5; white-space:pre-line;}
+.ls-now .cnt{font-size:12px; color:var(--sub); margin-top:8px;}
+.ls-now .stat{font-size:11px; color:var(--amber); min-height:15px;}
+.ls-transport{display:flex; justify-content:center; align-items:center; gap:14px; margin:10px 0 4px;}
+.ls-tbtn{width:54px; height:54px; border-radius:50%; border:1.5px solid var(--line); background:#fff; font-size:20px; cursor:pointer;}
+.ls-tbtn.play{width:72px; height:72px; font-size:28px; background:var(--accent); border-color:var(--accent); color:#fff;}
+.ls-pills{display:flex; justify-content:center; gap:7px; margin-top:9px; flex-wrap:wrap;}
+.ls-pill{padding:7px 12px; border-radius:99px; border:1.5px solid var(--line); background:#fff; font:inherit; font-size:12px; font-weight:600; color:var(--sub); cursor:pointer;}
+.ls-pill.on{background:var(--green-soft); border-color:var(--green); color:var(--green);}
+.ls-set{display:flex; align-items:center; gap:10px; margin:8px 0; font-size:13px;}
+.ls-set label{width:110px; color:var(--sub);}
+.ls-set input[type=range]{flex:1;}
+.ls-set .val{width:48px; text-align:right; font-weight:700; font-size:12px;}
+.ls-item{display:flex; align-items:center; gap:8px; padding:7px 2px; border-top:1px solid var(--line); font-size:13px;}
+.ls-item:first-of-type{border-top:none;}
+.ls-item .en{font-weight:700;}
+.ls-item .ja{color:var(--sub); font-size:12px;}
+.ls-item.known .en,.ls-item.known .ja{opacity:.4; text-decoration:line-through;}
+.ls-kbtn{border:none; background:none; font-size:17px; cursor:pointer; padding:3px;}
+nav.tabs{position:fixed; left:0; right:0; bottom:0; background:#fff; border-top:1px solid var(--line); display:flex; justify-content:space-around; padding:6px 4px calc(6px + env(safe-area-inset-bottom)); z-index:50;}
+nav.tabs button{border:none; background:none; font-size:11px; color:var(--sub); display:flex; flex-direction:column; align-items:center; gap:2px; padding:4px 10px; border-radius:10px;}
+nav.tabs button .ic{font-size:20px;}
+nav.tabs button.act{color:var(--accent); background:var(--accent-soft); font-weight:700;}
+.ledger{width:100%; border-collapse:collapse; font-size:13px;}
+.ledger th,.ledger td{padding:7px 4px; border-bottom:1px solid var(--line); text-align:center;}
+.ledger th{color:var(--sub); font-weight:600; font-size:12px;}
+.money{font-weight:700;}
+.fieldset{border:1px dashed var(--line); border-radius:10px; padding:10px; margin-top:10px;}
+.fieldset .lbl{font-size:12px; color:var(--sub); margin:6px 0 3px;}
+.examcard{border:1px solid var(--line); border-radius:12px; padding:12px; margin-bottom:10px;}
+.examcard h3{margin:0; font-size:14.5px;}
+.range{padding:8px 0; border-top:1px solid var(--line); font-size:13px;}
+.range:first-of-type{border-top:none;}
+h2 .ic{font-size:17px;}
+.kpis{display:grid; grid-template-columns:repeat(3,1fr); gap:8px; margin-bottom:12px;}
+.kpi{background:var(--card); border:1px solid var(--line); border-radius:12px; padding:10px; text-align:center;}
+.kpi .v{font-size:18px; font-weight:700;}
+.kpi .l{font-size:11px; color:var(--sub);}
+@media(min-width:700px){ nav.tabs{max-width:720px; margin:0 auto; border:1px solid var(--line); border-radius:16px 16px 0 0;} }
+</style>
+</head>
+<body>
+<div class="wrap">
+  <header class="app">
+    <h1>📚 学習スケジュール</h1>
+    <div class="sub" id="headSub"></div>
+  </header>
+  <div id="view"></div>
+</div>
+<nav class="tabs" id="tabs"></nav>
+<script>
+"use strict";
+/* ---------- 状態 ---------- */
+const KEY="tomoki_study_v1";
+const todayStr=()=>{const d=new Date();return d.getFullYear()+"-"+String(d.getMonth()+1).padStart(2,"0")+"-"+String(d.getDate()).padStart(2,"0");};
+const DEF={
+  settings:{dailyMin:60, weeklyPassDays:6, allowance:500, termEnd:"2027-03-19", startDate:todayStr()},
+  exams:[ {id:"ex1", name:"期末テスト（例：編集してください）", date:"2026-07-01", ranges:[
+      {id:"r1", subject:"英語", desc:"教科書 Lesson5〜7（p76〜117）音読・単語・本文", total:21, done:0, unit:"ページ(見開き)"},
+      {id:"r2", subject:"地理", desc:"教科書 p76〜119 ＋ ワーク該当範囲", total:22, done:0, unit:"ページ(見開き)"} ]} ],
+  routines:[ {id:"ro1", name:"英単語（大学受験基礎）", quota:20, unit:"語", active:true},
+             {id:"ro2", name:"数学 基礎問題（受験基礎）", quota:2, unit:"問", active:true} ],
+  logs:{}, weeks:{}
+};
+let S=load();
+function load(){ try{const j=JSON.parse(localStorage.getItem(KEY)); if(j&&j.settings) return Object.assign({},DEF,j);}catch(e){} return JSON.parse(JSON.stringify(DEF)); }
+function save(){ localStorage.setItem(KEY,JSON.stringify(S)); }
+/* ---------- 日付ユーティリティ ---------- */
+const P=(s)=>new Date(s+"T00:00:00");
+const iso=(d)=>d.getFullYear()+"-"+String(d.getMonth()+1).padStart(2,"0")+"-"+String(d.getDate()).padStart(2,"0");
+const addD=(s,n)=>{const d=P(s); d.setDate(d.getDate()+n); return iso(d);};
+const diffD=(a,b)=>Math.round((P(b)-P(a))/864e5);
+const mondayOf=(s)=>{const d=P(s); const w=(d.getDay()+6)%7; d.setDate(d.getDate()-w); return iso(d);};
+const fmtMD=(s)=>{const d=P(s); return (d.getMonth()+1)+"/"+d.getDate();};
+const WD=["月","火","水","木","金","土","日"];
+/* ---------- ログ ---------- */
+function getLog(ds){ if(!S.logs[ds]) S.logs[ds]={min:0,target:null,ranges:{},routines:{},note:""}; return S.logs[ds]; }
+function peekLog(ds){ return S.logs[ds]||{min:0,target:null,ranges:{},routines:{},note:""}; }
+function dayPassed(ds){ return peekLog(ds).min>=S.settings.dailyMin; }
+/* ---------- 週判定 ---------- */
+function weekInfo(mon){ // 月曜ISO → {passDays, passed, complete}
+  let pass=0, logged=0;
+  for(let i=0;i<7;i++){ const ds=addD(mon,i);
+    if(ds<S.settings.startDate){ pass++; continue; } // 開始前日は達成扱い
+    if(dayPassed(ds)) pass++;
+    if(peekLog(ds).min>0) logged++;
+  }
+  const complete = addD(mon,6) < todayStr();
+  return {passDays:pass, passed:pass>=S.settings.weeklyPassDays, complete, logged};
+}
+function ledgerWeeks(){ // 開始週〜先週
+  const out=[]; let m=mondayOf(S.settings.startDate); const cur=mondayOf(todayStr());
+  while(m<cur){ out.push(m); m=addD(m,7); } return out;
+}
+/* ---------- 今日のノルマ ---------- */
+function examTasks(ds){
+  const out=[];
+  for(const ex of S.exams){
+    const dl=diffD(ds,ex.date);
+    if(dl<0) continue;
+    for(const r of ex.ranges){
+      const rem=Math.max(0,r.total-r.done);
+      const quota = dl===0 ? 0 : Math.ceil(rem/Math.max(1,dl));
+      out.push({ex,r,rem,quota,dl});
+    }
+  }
+  return out;
+}
+/* ---------- 描画 ---------- */
+let TAB="today"; let calY,calM;
+const V=document.getElementById("view");
+const TABS=[["today","✅","今日"],["learn","📖","学習"],["listen","🎧","聴く"],["week","📅","週間"],["cal","🗓","記録"],["plan","🎯","計画"],["set","⚙️","設定"]];
+function renderTabs(){
+  document.getElementById("tabs").innerHTML = TABS.map(t=>`<button class="${TAB===t[0]?'act':''}" onclick="go('${t[0]}')"><span class="ic">${t[1]}</span>${t[2]}</button>`).join("");
+}
+function go(t){ TAB=t; render(); }
+function head(){
+  const t=todayStr();
+  let streak=0; let d=t; if(!dayPassed(d)) d=addD(d,-1);
+  while(d>=S.settings.startDate && dayPassed(d)){ streak++; d=addD(d,-1); }
+  const te=diffD(t,S.settings.termEnd);
+  let nearest=null;
+  for(const ex of S.exams){ const dl=diffD(t,ex.date); if(dl>=0&&(nearest===null||dl<nearest.dl)) nearest={ex,dl}; }
+  document.getElementById("headSub").innerHTML =
+    `🔥 連続達成 <b>${streak}</b>日　` +
+    (nearest?`📝 ${esc(nearest.ex.name)}まで <b>D-${nearest.dl}</b>　`:"") +
+    (te>=0?`🌸 学年末まで ${te}日`:"");
+}
+function esc(s){ return String(s).replace(/[&<>"]/g,c=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;"}[c])); }
+function render(){ renderTabs(); head();
+  if(TAB==="today") rToday(); else if(TAB==="learn") rLearn(); else if(TAB==="listen") rListen(); else if(TAB==="week") rWeek(); else if(TAB==="cal") rCal(); else if(TAB==="plan") rPlan(); else rSet(); }
+/* ----- 今日 ----- */
+function rToday(){
+  const t=todayStr(); const log=getLog(t);
+  const target = log.target || S.settings.dailyMin;
+  const okDay = log.min>=S.settings.dailyMin;
+  const pct=Math.min(100,Math.round(log.min/target*100));
+  const tasks=examTasks(t);
+  let h=`<div class="card">
+    <div class="spread"><h2><span class="ic">⏱</span>今日の勉強時間 <span class="muted">${fmtMD(t)}(${WD[(P(t).getDay()+6)%7]})</span></h2>
+      <span class="tag ${okDay?'green':'red'}">${okDay?'達成 ✓':'未達成'}</span></div>
+    <div class="row" style="margin:6px 0 8px"><span class="big">${log.min}</span><span class="muted">分 / 目標 ${target}分（最低${S.settings.dailyMin}分）</span></div>
+    <div class="bar"><i class="${okDay?'g':''}" style="width:${pct}%"></i></div>
+    <div class="row" style="margin-top:12px">
+      <button class="primary" onclick="addMin(15)">+15分</button>
+      <button class="primary" onclick="addMin(30)">+30分</button>
+      <button class="primary" onclick="addMin(60)">+60分</button>
+      <button class="mini" onclick="addMin(-15)">−15分</button>
+      <button class="mini" onclick="setTarget(${target===120?'null':'120'})">${target===120?'目標を60分に戻す':'今日は2時間モード'}</button>
+    </div></div>`;
+  h+=`<div class="card"><h2><span class="ic">📝</span>定期テスト対策（自動配分）</h2>`;
+  if(tasks.length===0) h+=`<div class="muted">試験が未登録です。「計画」タブから試験と範囲を登録すると、毎日のノルマが自動計算されます。</div>`;
+  for(const tk of tasks){
+    const did=log.ranges[tk.r.id]||0;
+    const ok=tk.quota>0&&did>=tk.quota;
+    h+=`<div class="task ${ok?'done':''}"><div class="info">
+      <div class="name">${ok?'✅ ':''}${esc(tk.r.subject)}：${esc(tk.r.desc)}</div>
+      <div class="meta">${tk.dl===0?'🎯 今日が試験日！':`今日のノルマ <b>${tk.quota}${esc(tk.r.unit)}</b>（残り${tk.rem}${esc(tk.r.unit)} ÷ ${tk.dl}日） ・ ${esc(tk.ex.name)} D-${tk.dl}`}</div></div>
+      <div class="step"><button onclick="bumpRange('${tk.r.id}',-1)">−</button><span class="num">${did}</span><button onclick="bumpRange('${tk.r.id}',1)">＋</button></div></div>`;
+  }
+  h+=`</div><div class="card"><h2><span class="ic">🎓</span>大学受験 毎日ルーチン</h2>`;
+  const acts=S.routines.filter(r=>r.active);
+  if(acts.length===0) h+=`<div class="muted">「計画」タブから毎日ルーチン（英単語など）を登録できます。</div>`;
+  for(const ro of acts){
+    const did=log.routines[ro.id]||0; const ok=did>=ro.quota;
+    h+=`<div class="task ${ok?'done':''}"><div class="info">
+      <div class="name">${ok?'✅ ':''}${esc(ro.name)}</div>
+      <div class="meta">1日 ${ro.quota}${esc(ro.unit)}</div></div>
+      <div class="step"><button onclick="bumpRoutine('${ro.id}',-1)">−</button><span class="num">${did}</span><button onclick="bumpRoutine('${ro.id}',${ro.quota>=10?5:1})">＋${ro.quota>=10?5:1}</button></div></div>`;
+  }
+  h+=`</div>`+learnTodayCard()+`<div class="card"><h2><span class="ic">✏️</span>今日のメモ</h2>
+    <textarea onchange="setNote(this.value)" placeholder="やったこと・気づきなど">${esc(log.note||"")}</textarea></div>`;
+  V.innerHTML=h;
+}
+function addMin(n){ const l=getLog(todayStr()); l.min=Math.max(0,l.min+n); save(); render(); }
+function setTarget(v){ const l=getLog(todayStr()); l.target=v; save(); render(); }
+function setNote(v){ getLog(todayStr()).note=v; save(); }
+function bumpRange(id,n){ const l=getLog(todayStr());
+  for(const ex of S.exams) for(const r of ex.ranges) if(r.id===id){
+    const cur=l.ranges[id]||0;
+    if(n>0&&r.done>=r.total) return;
+    if(n<0&&cur<=0) return;
+    l.ranges[id]=cur+n; r.done=Math.max(0,Math.min(r.total,r.done+n));
+  } save(); render(); }
+function bumpRoutine(id,n){ const l=getLog(todayStr()); const cur=l.routines[id]||0; l.routines[id]=Math.max(0,cur+n); save(); render(); }
+/* ===== 学習モジュール（教科書ブロック学習・100点マスタリー） ===== */
+/* 出典：東京書籍 Power On English Communication I（整理済み教科書データに基づく） */
+const QB=[
+{id:"PRE",ls:"Pre-Lesson（英語の文のしくみ）",nm:"基本ルール",pts:["英語は「だれが→どうする→なにを」の語順（S+V+O）","他動詞は直後に目的語（discuss the plan ○ / discuss about ×）","名詞のかたまりは後ろから説明（the mouse on the book＝本の上のネズミ）","形容詞は名詞を、 副詞は動詞などを説明する"],qs:[
+{q:"「私は毎朝りんごを食べます」の正しい英語は？",c:["I eat an apple every morning.","I an apple eat every morning.","Every morning apple I eat.","I every morning eat an apple."],a:0,ex:"英語は S（主語）+V（動詞）+O（目的語）の語順。動詞は主語のすぐ後ろ。"},
+{q:"正しい文はどれ？（discuss＝〜を話し合う）",c:["We discussed the plan.","We discussed about the plan.","We discussed on the plan.","We discussed to the plan."],a:0,ex:"discussは他動詞なので直後に目的語。aboutは不要。"},
+{q:"the mouse on the book の意味は？",c:["本の上のネズミ","ネズミの上の本","本とネズミ","ネズミの本"],a:0,ex:"英語では名詞を後ろから説明する。on the book が the mouse を説明。"},
+{q:"cute monkeys の cute のように、名詞を説明する語を何という？",c:["形容詞","副詞","動詞","前置詞"],a:0,ex:"形容詞は名詞（monkeys）を説明する。"},
+{q:"run fast の fast のように、動詞を説明する語を何という？",c:["副詞","形容詞","名詞","接続詞"],a:0,ex:"副詞は動詞・形容詞などを説明する。fastは「速く」走る様子を説明。"},
+{q:"I like the dog on the chair. どの犬が好き？",c:["いすの上にいる犬","いすの下にいる犬","いすの横の犬","どの犬でもよい"],a:0,ex:"on the chair（いすの上の）が後ろから the dog を説明している。"},
+{q:"英語の文で、動詞はふつうどこに置く？",c:["主語のすぐ後ろ","文の最後","文の最初","どこでもよい"],a:0,ex:"日本語は最後に動詞が来るが、英語は S+V の語順が基本。"},
+{q:"I ran there yesterday. の yesterday は何を表す副詞？",c:["時","場所","様子","理由"],a:0,ex:"yesterday（昨日）は「いつ」＝時を表す副詞。thereは場所、fastなら様子。"}]},
+{id:"L1V",ls:"Lesson 1  Japan's New Tourism",nm:"単語",pts:["sightseeing 観光 ／ countless 数えきれないほどの","construction 建設 ／ exotic 異国情緒のある","appeal to 〜の心を引きつける ／ mecca （活動の）中心地・聖地","nowadays 近頃は ／ seek 〜を求める ／ pride 誇り"],qs:[
+{q:"sightseeing の意味は？",c:["観光","建設","誇り","経験"],a:0,ex:"sightseeing＝観光。sports tourism（スポーツツーリズム）と対比して使われた。"},
+{q:"countless の意味は？",c:["数えきれないほどの","数が少ない","重要な","巨大な"],a:0,ex:"count（数える）+less。伏見稲荷大社の countless red torii gates。"},
+{q:"「建設」を表す英語は？",c:["construction","instruction","destruction","introduction"],a:0,ex:"construction＝建設。鳥居に書かれた the construction dates（建立日）。"},
+{q:"exotic の意味は？",c:["異国情緒のある","退屈な","高価な","伝統的な"],a:0,ex:"exotic＝異国風の・エキゾチックな。赤い鳥居と黒い文字の対比が very exotic。"},
+{q:"appeal to 〜 の意味は？",c:["〜の心を引きつける","〜に反対する","〜を破壊する","〜を輸出する"],a:0,ex:"It appeals to visitors from abroad.（外国からの観光客を引きつける）"},
+{q:"mecca の意味は？",c:["（活動の）中心地・聖地","砂漠","空港","祭り"],a:0,ex:"ニセコは a mecca for sports tourism（スポーツツーリズムの聖地）。"},
+{q:"nowadays の意味は？",c:["近頃は","昔は","ときどき","いつまでも"],a:0,ex:"nowadays＝近頃は・今日では。現在形と一緒に使うことが多い。"},
+{q:"seek の意味は？",c:["〜を求める","〜を隠す","〜を売る","〜を見せる"],a:0,ex:"tourists are seeking fresh experiences（新鮮な体験を求めている）。"},
+{t:1,q:"タイピング：「観光」を英語で（s で始まる1語）",a:["sightseeing"],ex:"sightseeing。sight（景色）+seeing（見ること）。"},
+{t:1,q:"タイピング：「近頃は」を英語で（n で始まる1語）",a:["nowadays"],ex:"nowadays。"},
+{q:"tourism の意味は？",c:["観光業","旅行者","神社","税金"],a:0,ex:"tourism＝観光業。sightseeing（観光）に対し産業全体を指す。"},
+{q:"「神社」を表す英語は？",c:["shrine","temple","castle","palace"],a:0,ex:"shrine＝神社、temple＝寺。Fushimi-Inari Taisha Shrine。"}]},
+{id:"L1G",ls:"Lesson 1  Japan's New Tourism",nm:"文法（現在形・過去形・進行形）",pts:["現在形＝今の状態・習慣（every yearなど）","過去形＝過去の動作・状態（last month, yesterdayなど）","進行形 be+〜ing＝「〜している最中」","one of the+複数名詞＝「〜のひとつ」"],qs:[
+{q:"Ms. Green （　） Kyoto every year.",c:["visits","visited","is visiting","visit"],a:0,ex:"every year（毎年）＝習慣なので現在形。主語が3人称単数なので visits。"},
+{q:"I （　） to the shrine last month.",c:["went","go","am going","goes"],a:0,ex:"last month（先月）があるので過去形 went。"},
+{q:"I （　） in Hokkaido at that time.",c:["was skiing","am skiing","ski","have skied"],a:0,ex:"at that time（そのとき）＝過去のある時点で進行中→過去進行形 was skiing。"},
+{q:"Fushimi-Inari Taisha is one of the most popular sightseeing （　） in Japan.",c:["spots","spot","a spot","spotting"],a:0,ex:"one of the+最上級+複数名詞。「最も人気の観光地のひとつ」。"},
+{q:"The shrine is famous （　） its countless red torii gates.",c:["for","to","at","on"],a:0,ex:"be famous for 〜＝「〜で有名」。"},
+{q:"She （　） pictures of the gates now.",c:["is taking","takes","took","taken"],a:0,ex:"now（今）＝現在進行中→現在進行形 is taking。"},
+{q:"「彼は毎日カラオケを楽しみます」正しいのは？",c:["He enjoys karaoke every day.","He enjoy karaoke every day.","He is enjoy karaoke every day.","He enjoyed karaoke every day."],a:0,ex:"習慣＝現在形。3人称単数なので enjoys。"},
+{q:"現在進行形が表すのは？",c:["今まさにしている最中の動作","毎日の習慣","過去の経験","未来の予定だけ"],a:0,ex:"be動詞+〜ingで「〜しているところ」。習慣は現在形で表す。"},
+{t:1,q:"タイピング：I （　） to the shrine last month.（go を正しい形に）",a:["went"],ex:"last month があるので過去形 went。go-went-gone。"}]},
+{id:"L1R",ls:"Lesson 1  Japan's New Tourism",nm:"本文理解",pts:["外国人観光客に一番人気＝伏見稲荷大社（京都）","数えきれない赤い鳥居×黒い文字（寄進者名・建立日）のコントラスト","Japow＝Japanese powder snow。ニセコはスポーツツーリズムの聖地","新しい観光＝スポーツツーリズムと文化ツーリズム"],qs:[
+{q:"本文で「外国人観光客に最も人気の観光地」とされたのは？",c:["伏見稲荷大社","金閣寺","広島平和記念公園","東京スカイツリー"],a:0,ex:"The answer is ... Fushimi-Inari Taisha Shrine in Kyoto!"},
+{q:"伏見稲荷大社は何で有名？",c:["数えきれないほどの赤い鳥居","大きな大仏","五重塔","桜並木"],a:0,ex:"famous for its countless red torii gates。"},
+{q:"鳥居に書かれている黒い文字は何？",c:["寄進した人の名前と建立日","お経","観光客の落書き","神様の名前"],a:0,ex:"the construction dates of the gates and the names of donors（寄進者名と建立日）。"},
+{q:"「Japow」とは何のこと？",c:["日本のパウダースノー","日本のポップカルチャー","日本の温泉","日本の食べ物"],a:0,ex:"Japow＝Japanese powder snow。とても軽くて柔らかい雪。"},
+{q:"北海道のニセコは何の「聖地（mecca）」？",c:["スポーツツーリズム","映画のロケ地","アニメ","グルメ"],a:0,ex:"Niseko in Hokkaido is now a mecca for sports tourism。"},
+{q:"本文で挙げられた「新しい観光」の2つは？",c:["スポーツツーリズムと文化ツーリズム","宇宙旅行と海底旅行","医療ツーリズムと農業体験","登山と釣り"],a:0,ex:"not only sightseeing but also sports tourism and cultural tourism。"},
+{q:"世界中のスキーヤー・スノーボーダーが日本に来る理由は？",c:["雪がとても軽くて柔らかいから","リフト代が安いから","夏でも滑れるから","コースが短いから"],a:0,ex:"Japanese powder snow is very soft and light。"},
+{q:"日本は今、観光客にとってどんな国になっている？",c:["新鮮な体験を求めて世界中から人が来る国","観光客が減り続けている国","外国人が入国できない国","スキーだけが目的の国"],a:0,ex:"tourists are seeking fresh experiences, not just sightseeing。"}]},
+{id:"L2V",ls:"Lesson 2  Light from Creatures",nm:"単語",pts:["distract （注意を）そらす ／ predator 捕食者","attract 引きつける ／ mate つがいの相手","century 世紀 ／ purpose 目的 ／ flash 光る・点滅する","firefly ホタル ／ squid イカ ／ jellyfish クラゲ"],qs:[
+{q:"distract の意味は？",c:["（注意を）そらす","引きつける","食べる","照らす"],a:0,ex:"distract predators＝捕食者の気をそらす。ホタルイカが光る理由。"},
+{q:"predator の意味は？",c:["捕食者","獲物","仲間","研究者"],a:0,ex:"predator＝捕食者。襲ってくる敵のこと。"},
+{q:"attract の意味は？",c:["引きつける","逃がす","驚かす","数える"],a:0,ex:"attract small fish＝小魚を引き寄せる。distract（そらす）と対で覚える。"},
+{q:"mate の意味は？",c:["つがいの相手","食べ物","光","巣"],a:0,ex:"look for mates＝相手を探す。ホタルが点滅する理由。"},
+{q:"century の意味は？",c:["世紀（100年）","10年","1000年","季節"],a:0,ex:"for centuries＝何世紀もの間。"},
+{q:"purpose の意味は？",c:["目的","結果","原因","方法"],a:0,ex:"for different purposes＝さまざまな目的のために。"},
+{q:"「クラゲ」を表す英語は？",c:["jellyfish","squid","firefly","anglerfish"],a:0,ex:"jellyfish＝クラゲ。crystal jellyfish（オワンクラゲ）が本文に登場。"},
+{q:"「イカ」を表す英語は？",c:["squid","octopus","crab","shrimp"],a:0,ex:"squid＝イカ。firefly squid＝ホタルイカ。"},
+{t:1,q:"タイピング：「世紀」を英語で（c で始まる1語）",a:["century"],ex:"century。複数形は centuries。"},
+{t:1,q:"タイピング：「目的」を英語で（p で始まる1語）",a:["purpose"],ex:"purpose。"},
+{q:"creature の意味は？",c:["生き物","創造","文化","治療"],a:0,ex:"creature＝生き物。Light from Creatures＝生き物からの光。"},
+{q:"「方法」を表す英語は？",c:["method","mission","member","medal"],a:0,ex:"method＝方法。methods for early cancer detection。"}]},
+{id:"L2G",ls:"Lesson 2  Light from Creatures",nm:"文法（受け身・現在完了）",pts:["受け身＝be動詞+過去分詞「〜される」","現在完了 have+過去分詞：経験「〜したことがある」・継続「ずっと〜」","for+期間／since+起点","現在完了進行形 have been 〜ing「ずっと〜し続けている」"],qs:[
+{q:"The light （　） for different purposes.",c:["is used","uses","is using","used to"],a:0,ex:"「光は使われる」→受け身 be動詞+過去分詞。"},
+{q:"（　） you ever seen fireflies?",c:["Have","Do","Are","Did"],a:0,ex:"ever（今までに）＝経験を表す現在完了。Have you ever+過去分詞?"},
+{q:"I have known John （　） he was five.",c:["since","for","from","at"],a:0,ex:"since+起点（彼が5歳のときから）。for は期間（for ten years）。"},
+{q:"They （　） a trip since last March.",c:["have been planning","plan","are planning","planned"],a:0,ex:"「3月からずっと計画し続けている」→現在完了進行形 have been 〜ing。"},
+{q:"I have seen fireflies （　）.",c:["several times","yesterday","last week","two days ago"],a:0,ex:"現在完了は yesterday など過去の一時点を表す語とは使えない。回数表現はOK。"},
+{q:"This song （　） by many people.",c:["is loved","loves","is loving","love"],a:0,ex:"「歌は愛される」→受け身。動作する側を示すときは by 〜。"},
+{q:"現在完了（have+過去分詞）が表せないのは？",c:["明日の予定","経験","継続","完了"],a:0,ex:"現在完了は過去とつながった「今」を表す。未来の予定は表せない。"},
+{q:"Firefly squid （　） in Toyama for a long time.",c:["have been caught","catch","are catching","caught to"],a:0,ex:"「長い間捕られてきた」→受け身+現在完了 have been+過去分詞。"},
+{t:1,q:"タイピング：I have （　） him for ten years.（know を正しい形に）",a:["known"],ex:"現在完了は have+過去分詞。know-knew-known。"}]},
+{id:"L2R",ls:"Lesson 2  Light from Creatures",nm:"本文理解",pts:["ホタルイカ：捕食者の気をそらすために光る","ホタル：相手（mate）を探すときに点滅。日本の詩歌に何世紀も登場","アンコウ：深く暗い海で小魚をおびき寄せるために光る","オワンクラゲのタンパク質→がんの早期発見の研究に活用"],qs:[
+{q:"ホタルイカはどんなときに光る？",c:["捕食者の気をそらすとき","眠るとき","卵を産むとき","水温が上がったとき"],a:0,ex:"Firefly squid flash lights when they distract predators。"},
+{q:"ホタルは何のために光を点滅させる？",c:["つがいの相手を探すため","敵を攻撃するため","暖まるため","道を照らすため"],a:0,ex:"They turn their lights on and off when they look for mates。"},
+{q:"アンコウ（anglerfish）はどこにすんでいる？",c:["深く暗い海","浅い川","湖","サンゴ礁"],a:0,ex:"Anglerfish live in the deep dark sea。"},
+{q:"アンコウが光る目的は？",c:["小魚をおびき寄せて食べるため","体を温めるため","仲間と話すため","卵を守るため"],a:0,ex:"They flash lights ... The lights attract small fish.（食料のため）"},
+{q:"ホタルは日本で昔から何に登場してきた？",c:["詩や歌","通貨","国旗","地図"],a:0,ex:"They have appeared in Japanese poems and songs for centuries。"},
+{q:"オワンクラゲ（crystal jellyfish）のタンパク質は何に役立てられている？",c:["がんの早期発見の研究","宝石の製造","食品の保存","燃料の開発"],a:0,ex:"the development of methods for early cancer detection（がん早期発見法の開発）。"},
+{q:"この課のテーマとして最も適切なのは？",c:["生き物の光はさまざまな目的で使われている","光る生き物は日本にしかいない","光る生き物は絶滅した","光は人間にしか作れない"],a:0,ex:"In these ways, the light is used for different purposes。"},
+{q:"ホタルイカで有名な日本の県は？",c:["富山県","沖縄県","長野県","奈良県"],a:0,ex:"本文・図表で富山のホタルイカが紹介されている。"}]},
+{id:"L3V",ls:"Lesson 3  One Small Goal at a Time",nm:"単語",pts:["muscle 筋肉 ／ height 身長 ／ swing スイング","congratulate 祝う ／ pretend 〜のふりをする","donate 寄付する ／ achieve 達成する","modest 謙虚な ／ realize 実現する・気づく"],qs:[
+{q:"muscle の意味は？",c:["筋肉","骨","身長","体重"],a:0,ex:"strong muscles＝強い筋肉。発音は「マッスル」（cは読まない）。"},
+{q:"height の意味は？",c:["身長・高さ","体重","速さ","強さ"],a:0,ex:"make up for his height＝身長（の低さ）を補う。highの名詞形。"},
+{q:"congratulate の意味は？",c:["祝う","非難する","応援する","驚く"],a:0,ex:"congratulate him＝彼を祝う。Congratulations!（おめでとう）の動詞形。"},
+{q:"pretend の意味は？",c:["〜のふりをする","〜を約束する","〜を防ぐ","〜を準備する"],a:0,ex:"pretends to do muscle training＝筋トレをするふりをする。"},
+{q:"donate の意味は？",c:["寄付する","借りる","稼ぐ","貯める"],a:0,ex:"He donates 100,000 yen＝10万円を寄付する。"},
+{q:"achieve の意味は？",c:["達成する","あきらめる","始める","延期する"],a:0,ex:"Achieving one small goal at a time＝小さな目標を一つずつ達成すること。"},
+{q:"modest の意味は？",c:["謙虚な","有名な","大胆な","裕福な"],a:0,ex:"he is still modest＝彼は今も謙虚だ。"},
+{q:"「ダンベル」を表す英語は？",c:["dumbbell","barbell","bat","glove"],a:0,ex:"plastic dumbbells＝プラスチック製のダンベル。"},
+{t:1,q:"タイピング：「筋肉」を英語で（m で始まる1語）",a:["muscle"],ex:"muscle。cは発音しない。"},
+{t:1,q:"タイピング：「寄付する」を英語で（d で始まる1語）",a:["donate"],ex:"donate。名詞は donation。"},
+{q:"professional の意味は？",c:["プロの","素人の","部分的な","昔の"],a:0,ex:"professional＝プロの。professional baseball player。"},
+{q:"childhood の意味は？",c:["子ども時代","児童","幼稚園","若さ"],a:0,ex:"childhood＝子ども時代。His childhood dream（子どもの頃の夢）。"}]},
+{id:"L3G",ls:"Lesson 3  One Small Goal at a Time",nm:"文法（to不定詞）",pts:["名詞的用法「〜すること」：want to 〜, decide to 〜","副詞的用法「〜するために」：I went there to see a game.","形容詞的用法「〜するための・〜する」：ability to hit balls","one of の後ろは複数名詞"],qs:[
+{q:"I want （　） a job in the future.",c:["to get","get","getting","got"],a:0,ex:"want to+動詞の原形＝「〜したい」（名詞的用法）。"},
+{q:"I went to a baseball stadium （　） a game.",c:["to see","see","saw","seen"],a:0,ex:"「試合を見るために」＝目的を表す副詞的用法。"},
+{q:"His ability （　） balls amazes everyone.",c:["to hit","hit","hitting","hits"],a:0,ex:"ability to hit＝「打つ能力」。名詞を後ろから説明する形容詞的用法。"},
+{q:"She decided （　） abroad.",c:["to study","study","studied","studies"],a:0,ex:"decide to+原形＝「〜することに決める」。"},
+{q:"「彼は子どもたちを支援するために寄付をする」He donates money （　） children.",c:["to support","support","supported","to supporting"],a:0,ex:"目的（〜するために）＝to+動詞の原形。"},
+{q:"I want something （　）. 「何か飲み物がほしい」",c:["to drink","drink","drank","drinking"],a:0,ex:"something to drink＝「飲むための何か」。形容詞的用法。"},
+{q:"次のうち to不定詞の「名詞的用法」はどれ？",c:["To play baseball is fun.","I went home to sleep.","He has a lot of homework to do.","She ran fast to catch the bus."],a:0,ex:"To play baseball（野球をすること）が主語＝名詞の働き。"},
+{q:"I will bring a special flag （　） my favorite team!",c:["to cheer on","cheer","cheered","to cheering"],a:0,ex:"「応援するために」＝副詞的用法。to+動詞の原形。"},
+{t:1,q:"タイピング：「試合を見るために」to （　） a game（1語）",a:["see","watch"],ex:"to see（watch）a game。toの後ろは動詞の原形。"}]},
+{id:"L3R",ls:"Lesson 3  One Small Goal at a Time",nm:"本文理解",pts:["吉田正尚選手：身長は高くないが強い筋肉がカバー","ホームラン後、チームメイトがプラスチックのダンベルで祝福","子どもの頃の夢＝メジャーリーガー。1本につき10万円を途上国の子どもに寄付","モットー：小さな目標の積み重ねが大きな夢につながる"],qs:[
+{q:"吉田選手の身長の低さを補っているものは？",c:["強い筋肉","長いバット","特別なシューズ","speed"],a:0,ex:"his strong muscles make up for his height。"},
+{q:"ホームランを打ったとき、チームメイトは何をして祝う？",c:["プラスチックのダンベルを渡す","胴上げをする","水をかける","ハイタッチだけする"],a:0,ex:"give him plastic dumbbells to congratulate him。彼は筋トレのふりをする。"},
+{q:"吉田選手の子どもの頃からの夢は？",c:["メジャーリーガーになること","監督になること","医者になること","会社をつくること"],a:0,ex:"His childhood dream was to be a major leaguer. It came true。"},
+{q:"ホームラン1本につき寄付する金額は？",c:["10万円","1万円","100万円","1000円"],a:0,ex:"He donates 100,000 yen for each of his home runs。"},
+{q:"寄付はどんな人たちのため？",c:["発展途上国の子どもたち","チームの後輩","母校の野球部","病院の患者"],a:0,ex:"to help children in need（カンボジア・バングラデシュ・フィリピンなど）。"},
+{q:"吉田選手の信条（モットー）は？",c:["小さな目標を一つずつ達成することが大きな夢につながる","勝つことがすべて","練習よりセンス","運も実力のうち"],a:0,ex:"Achieving one small goal at a time will lead you to your big dream。"},
+{q:"多くのファンが球場に来る目的は？",c:["彼のパフォーマンスを見るため","ダンベルをもらうため","サインをもらうため","食事のため"],a:0,ex:"Many fans come to the stadium to see his performance。"},
+{q:"夢をかなえた今の吉田選手の人柄は？",c:["今も謙虚","自信過剰","無口","厳しい"],a:0,ex:"he is still modest（それでも彼は謙虚だ）。"}]},
+{id:"L4V",ls:"Lesson 4  Miniature Life",nm:"単語",pts:["miniature ミニチュアの ／ pastime 趣味・気晴らし","express 表現する ／ concept 概念・考え方","ordinary 普通の ／ object 物・物体","traditional 伝統的な ／ pebble 小石"],qs:[
+{q:"pastime の意味は？",c:["趣味・気晴らし","過去","昼食","仕事"],a:0,ex:"as a pastime＝趣味として。pass（過ごす）+time。"},
+{q:"express の意味は？",c:["表現する","急ぐ","輸出する","期待する"],a:0,ex:"express mountains and water＝山と水を表現する。"},
+{q:"concept の意味は？",c:["概念・考え方","コンサート","契約","競争"],a:0,ex:"the concept of mitate＝見立てという考え方。"},
+{q:"ordinary の意味は？",c:["普通の","特別な","古代の","命令の"],a:0,ex:"ordinary objects＝ありふれた物。ブロッコリーなど身近な物のこと。"},
+{q:"object の意味は？",c:["物・物体","目的だけ","反対","劇場"],a:0,ex:"ordinary objects（日用品）をミニチュア人形と組み合わせる。"},
+{q:"traditional の意味は？",c:["伝統的な","貿易の","一時的な","電動の"],a:0,ex:"a traditional Japanese culture＝日本の伝統文化（見立て）。"},
+{q:"pebble の意味は？",c:["小石","岩山","砂浜","宝石"],a:0,ex:"rocks, stones, and pebbles＝岩・石・小石（日本庭園の材料）。"},
+{q:"「ミニチュアの」を表す英語は？",c:["miniature","minimum","minor","miner"],a:0,ex:"miniature figures＝ミニチュア人形。"},
+{t:1,q:"タイピング：「表現する」を英語で（e で始まる1語）",a:["express"],ex:"express。名詞は expression（表現）。"},
+{t:1,q:"タイピング：「文化」を英語で（c で始まる1語）",a:["culture"],ex:"culture。traditional Japanese culture。"},
+{q:"「作品」の意味で使える英語は？",c:["work","job","task","duty"],a:0,ex:"work には「仕事」のほか「作品」の意味がある。his works＝彼の作品。"},
+{q:"completely の意味は？",c:["完全に","部分的に","静かに","複雑に"],a:0,ex:"completely different images＝完全に異なるイメージ。"}]},
+{id:"L4G",ls:"Lesson 4  Miniature Life",nm:"文法（分詞の後置修飾・比較）",pts:["現在分詞 〜ing「〜している…」：the boy standing there","過去分詞「〜された…」：comic books translated into English","比較級 -er/more 〜 than … ／ 最上級 the -est/most 〜","as 〜 as …「…と同じくらい〜」"],qs:[
+{q:"あそこに立っている男の子：the boy （　） there",c:["standing","stood","stands","to standing"],a:0,ex:"「〜している」＝現在分詞 standing が後ろから boy を説明。"},
+{q:"英語に翻訳された漫画：comic books （　） into English",c:["translated","translating","translate","to translate"],a:0,ex:"「翻訳された」＝過去分詞 translated。される側なので過去分詞。"},
+{q:"This is the （　） picture of the three.",c:["most beautiful","beautifulest","more beautiful","beautiful"],a:0,ex:"3つの中で一番＝最上級。長い形容詞は the most+原級。"},
+{q:"My room is （　） than my sister's.",c:["smaller","smallest","more small","as small"],a:0,ex:"2つの比較＝比較級 -er+than。"},
+{q:"Hana is as （　） as her mother.",c:["tall","taller","tallest","more tall"],a:0,ex:"as 〜 as の間は原級（もとの形）。「母と同じくらい背が高い」。"},
+{q:"田中さんによって撮られた写真：a picture （　） by Mr. Tanaka",c:["taken","taking","takes","to take"],a:0,ex:"「撮られた」＝過去分詞 taken。"},
+{q:"現在分詞（〜ing）で名詞を修飾するのはどんなとき？",c:["その名詞が「〜している」とき","その名詞が「〜される」とき","過去の話のとき","否定文のとき"],a:0,ex:"している→現在分詞、される→過去分詞。"},
+{q:"I think German is （　） difficult than English.",c:["more","most","much","very"],a:0,ex:"difficultは長い形容詞なので more+原級+than。"},
+{t:1,q:"タイピング：英語で話している少女 the girl （　） English（speak を正しい形に）",a:["speaking"],ex:"「話している」＝現在分詞 speaking。"}]},
+{id:"L4R",ls:"Lesson 4  Miniature Life",nm:"本文理解",pts:["田中達也さん＝見立て（mitate）作家。日用品×ミニチュア人形","きっかけ：ハンバーグの隣のブロッコリーが木に見えた","見立て＝あるものを別のものとして見る日本の伝統文化（例：枯山水）","彼の願い＝見立ての概念を世界中の人と共有すること"],qs:[
+{q:"田中達也さんはどんな作品を作る artist？",c:["日用品とミニチュア人形を組み合わせた見立て作品","油絵","巨大な彫刻","アニメ映画"],a:0,ex:"ordinary objects＋miniature figures で全く別のイメージを作る mitate artist。"},
+{q:"もともとの趣味は何だった？",c:["プラモデルやミニチュア人形を集めて写真を撮ること","登山","料理","ピアノ"],a:0,ex:"collected plastic models and miniature figures as a pastime and took pictures of them。"},
+{q:"見立てを始めるきっかけになった食べ物は？",c:["ブロッコリー","トマト","パスタ","パン"],a:0,ex:"ハンバーグの隣のブロッコリーが木（broccoli trees）に見えた。"},
+{q:"「見立て（mitate）」とは？",c:["あるものを別のものとして見る日本の伝統文化","小さい物を集める趣味","写真の加工技術","外国の芸術運動"],a:0,ex:"seeing one thing as another＝見立て。a traditional Japanese culture。"},
+{q:"本文で見立ての例として挙げられた日本庭園は、石などで何を表現している？",c:["山と水","動物","人の顔","星空"],a:0,ex:"a Japanese rock garden ... express mountains and water（枯山水）。"},
+{q:"田中さんが世界中の人と共有したいものは？",c:["見立てという考え方","お金","ミニチュア人形そのもの","日本食"],a:0,ex:"I want to share the concept of mitate with people all over the world。"},
+{q:"田中さんから高校生へのメッセージは？",c:["好きなことを見つけて追い続けること","勉強だけしなさい","海外に住みなさい","早く就職しなさい"],a:0,ex:"find a favorite thing and pursue it（Review）。"},
+{q:"田中さんの作品の特徴は？",c:["ありふれた物が全く別の物に見えてくる","本物そっくりの模型","巨大スケール","白黒写真"],a:0,ex:"creates completely different images by mitate。"}]},
+{id:"L5V",ls:"Lesson 5  Banana Paper",nm:"単語",pts:["fiber 繊維 ／ stem 茎 ／ harvest 収穫する","poverty 貧困 ／ illegal 違法な","technique 技術 ／ sustainable 持続可能な ／ resource 資源","enormous 巨大な ／ familiar よく知られた"],qs:[
+{q:"fiber の意味は？",c:["繊維","肥料","葉","果実"],a:0,ex:"banana fibers＝バナナの繊維。紙の原料になる。"},
+{q:"stem の意味は？",c:["茎","根","種","花"],a:0,ex:"banana stems＝バナナの茎。収穫後に捨てられていた部分。"},
+{q:"harvest の意味は？",c:["収穫する","植える","売る","運ぶ"],a:0,ex:"after the bananas are harvested＝バナナが収穫された後。"},
+{q:"poverty の意味は？",c:["貧困","権力","財産","人口"],a:0,ex:"poverty, a lack of education＝貧困や教育の不足（村の問題）。"},
+{q:"illegal の意味は？",c:["違法な","合法な","重要な","健康な"],a:0,ex:"illegal hunting of wild animals＝野生動物の違法な狩猟。"},
+{q:"sustainable の意味は？",c:["持続可能な","高価な","壊れやすい","伝統的な"],a:0,ex:"a sustainable resource＝持続可能な資源。SDGsの S。"},
+{q:"technique の意味は？",c:["技術","科学","機械","材料"],a:0,ex:"Japanese techniques for making washi＝和紙づくりの日本の技術。"},
+{q:"enormous の意味は？",c:["巨大な","普通の","小さな","危険な"],a:0,ex:"enormous herbs＝巨大な草。バナナは木ではなく草。"},
+{t:1,q:"タイピング：「貧困」を英語で（p で始まる1語）",a:["poverty"],ex:"poverty。poor（貧しい）の名詞形。"},
+{t:1,q:"タイピング：「持続可能な」を英語で（s で始まる1語）",a:["sustainable"],ex:"sustainable。sustain（持続させる）+able。"},
+{q:"education の意味は？",c:["教育","経済","環境","感情"],a:0,ex:"education＝教育。a lack of education（教育の不足）。"},
+{q:"「野生の」を表す英語は？",c:["wild","wide","mild","while"],a:0,ex:"wild＝野生の。wild animals（野生動物）。"}]},
+{id:"L5G",ls:"Lesson 5  Banana Paper",nm:"文法（関係代名詞）",pts:["主格 who/which/that：後ろに動詞が続く","目的格 who(m)/which/that：後ろに S+V が続く（省略できる）","先行詞が人→who ／ 物→which ／ どちらも→that","S+seem to 〜「〜のようだ」"],qs:[
+{q:"バナナペーパープロジェクトを始めた男性：the man （　） started the project",c:["who","which","whom","what"],a:0,ex:"先行詞が人＋後ろに動詞→主格 who（that も可）。"},
+{q:"日本で食べられているバナナ：the bananas （　） are eaten in Japan",c:["that","who","whom","whose"],a:0,ex:"先行詞が物＋後ろに動詞→主格 that／which。"},
+{q:"Banana paper is not made from the part of bananas （　） you eat.",c:["that","who","what","whose"],a:0,ex:"後ろに you eat（S+V）→目的格 that（which）。省略も可能。"},
+{q:"関係代名詞を省略できるのはどんなとき？",c:["目的格のとき","主格のとき","先行詞が人のとき","いつでも"],a:0,ex:"目的格（後ろに S+V）は省略可。主格は省略できない。"},
+{q:"Life in the village （　） to be better.",c:["seems","sees","looks at","feels to"],a:0,ex:"seem to 〜＝「〜のようだ」。3人称単数なので seems。"},
+{q:"沖縄で出会った人々：the people （　） I met in Okinawa",c:["whom","which","what","whose"],a:0,ex:"先行詞が人＋後ろに S+V →目的格 whom（who/that も可）。"},
+{q:"先行詞が「物」のとき使えない関係代名詞は？",c:["who","which","that","（省略）"],a:0,ex:"who は人にだけ使う。物には which か that。"},
+{q:"This is a website （　） tells us about banana paper.",c:["which","whom","who","what"],a:0,ex:"先行詞が物（website）＋後ろに動詞→主格 which／that。"},
+{t:1,q:"タイピング：彼が作った紙 the paper （　） he made（省略しない場合の関係代名詞1語・t で始まる）",a:["that"],ex:"目的格 that（which でも可）。後ろに he made（S+V）。"}]},
+{id:"L5R",ls:"Lesson 5  Banana Paper",nm:"本文理解",pts:["舞台：ザンビアのムフウェ村。貧困・教育不足・違法狩猟が問題","2011年、日本の会社がバナナペーパープロジェクトを開始","捨てられていたバナナの茎の繊維×和紙の技術→紙に","効果：仕事が生まれ、子どもが学校へ。違法狩猟に頼らない生活"],qs:[
+{q:"バナナペーパープロジェクトの舞台となった国は？",c:["ザンビア","ケニア","ブラジル","インド"],a:0,ex:"Mfuwe Village in Zambia（ザンビアのムフウェ村）。"},
+{q:"村が抱えていた問題として本文で挙げられたのは？",c:["貧困・教育の不足・野生動物の違法な狩猟","人口の増えすぎ","火山の噴火","交通渋滞"],a:0,ex:"poverty, a lack of education, and the illegal hunting of wild animals。"},
+{q:"プロジェクトを始めたのはいつ・どこの会社？",c:["2011年・日本の会社","1990年・アメリカの会社","2020年・中国の会社","2001年・ドイツの会社"],a:0,ex:"In 2011, a Japanese company started a banana paper project。"},
+{q:"バナナペーパーの原料は？",c:["収穫後に捨てられていたバナナの茎の繊維","バナナの皮","バナナの実","バナナの葉だけ"],a:0,ex:"banana stems are thrown away ... turned into fibers（茎→繊維）。"},
+{q:"バナナの繊維はどんな日本の技術と組み合わされた？",c:["和紙づくりの技術","折り紙の技術","染め物の技術","木版画の技術"],a:0,ex:"processed with techniques for making washi and made into beautiful paper。"},
+{q:"バナナペーパーから作られる製品の例は？",c:["名刺・折り紙・ノート","衣服・くつ","家具・食器","自動車の部品"],a:0,ex:"business cards, origami paper, and notebooks。"},
+{q:"プロジェクトが村にもたらした変化は？",c:["仕事が生まれ、子どもが学校に行けるようになった","人口が減った","観光客が減った","バナナが値上がりしただけ"],a:0,ex:"got jobs ... children can go to school ... don't have to hunt wild animals。"},
+{q:"バナナは植物としては何に分類される？",c:["巨大な草","木","つる植物","コケ"],a:0,ex:"Bananas do not grow on trees, but on enormous herbs（巨大な草）。"}]},
+{id:"L6V",ls:"Lesson 6  Patterns in Human Behavior",nm:"単語",pts:["behavior 行動 ／ experiment 実験 ／ researcher 研究者","wallet 財布 ／ item 品物 ／ percentage 割合","average 平均 ／ participant 参加者 ／ hesitate ためらう","unnecessary 不必要な ／ purchase 〜を購入する"],qs:[
+{q:"behavior の意味は？",c:["行動","行儀だけ","買い物","実験"],a:0,ex:"human behavior＝人間の行動。この課のテーマ。"},
+{q:"experiment の意味は？",c:["実験","経験","専門家","期待"],a:0,ex:"experiment＝実験。experience（経験）と混同注意。"},
+{q:"researcher の意味は？",c:["研究者","検索","リサイクル","調査書"],a:0,ex:"research（研究する）＋er（人）＝研究者。"},
+{q:"wallet の意味は？",c:["財布","壁","くつ","かばん"],a:0,ex:"wallet＝財布。240個の財布を落とす実験が登場。"},
+{q:"percentage の意味は？",c:["割合","百","記号","点数"],a:0,ex:"percentage＝割合。return percentage（返却率）。"},
+{q:"average の意味は？",c:["平均","損害","勇気","年齢"],a:0,ex:"on average＝平均して。"},
+{q:"participant の意味は？",c:["参加者","部分","パーティー","出発"],a:0,ex:"participant＝参加者。実験の被験者の意味でも使う。"},
+{q:"hesitate の意味は？",c:["ためらう","急ぐ","憎む","期待する"],a:0,ex:"hesitate＝ためらう。hesitate to do（〜するのをためらう）。"},
+{q:"unnecessary の意味は？",c:["不必要な","不可能な","不公平な","不自然な"],a:0,ex:"un＋necessary。unnecessary food＝不必要な食べ物。"},
+{q:"purchase の意味は？",c:["〜を購入する","〜を追いかける","〜を準備する","〜を約束する"],a:0,ex:"purchase＝buy のかたい語。名詞「購入」も同形。"},
+{t:1,q:"タイピング：「行動」を英語で（b で始まる1語）",a:["behavior","behaviour"],ex:"behavior。behave（ふるまう）の名詞形。"},
+{t:1,q:"タイピング：「平均」を英語で（a で始まる1語）",a:["average"],ex:"average。on average（平均して）。"}]},
+{id:"L6G",ls:"Lesson 6  Patterns in Human Behavior",nm:"文法（It is 形容詞 that / SVC / SVOC）",pts:["It is 形容詞 that 〜「〜ということは…だ」（It＝形式主語）","S+V+C：look／feel／become など＋形容詞","S+V+O+C：make+O+C「OをCにする」","補語Cに副詞は入れない（×happily ○happy）"],qs:[
+{q:"It is natural （　） we want to understand human behavior.",c:["that","what","who","if"],a:0,ex:"It is 形容詞 that 〜。It は形式主語で本当の主語は that節。"},
+{q:"The cookies （　） delicious.",c:["look","see","watch","show"],a:0,ex:"look＋形容詞＝「〜に見える」。S+V+C の文型。"},
+{q:"We （　） tired after the long test.",c:["felt","fell","feel to","made"],a:0,ex:"feel＋形容詞＝「〜と感じる」。feel-felt-felt。"},
+{q:"Buying unnecessary food will （　） you unhappy.",c:["make","look","go","take"],a:0,ex:"make+O+C「OをCにする」。買うこと＝主語の動名詞。"},
+{q:"S+V+C の C（補語）に入るのは？",c:["形容詞や名詞","副詞","動詞の原形","前置詞"],a:0,ex:"補語は主語の状態を説明する。S＝C の関係が成り立つ。"},
+{q:"The news made us （　）.",c:["happy","happily","to happy","happiness"],a:0,ex:"make+O+C の C は形容詞。副詞 happily は入れられない。"},
+{q:"It is certain （　） he will come.",c:["that","this","it","what"],a:0,ex:"It is certain that 〜＝「〜は確実だ」。"},
+{q:"「彼女は幸せそうに見えた」を英語で言うと？",c:["She looked happy.","She looked happily.","She saw happy.","She watched happy."],a:0,ex:"look＋形容詞。happily（副詞）にしないのが最重要ポイント。"},
+{t:1,q:"タイピング：The story made me （　）.（「悲しい」を表す形容詞）",a:["sad"],ex:"make me sad＝私を悲しくさせる。Cは形容詞。"}]},
+{id:"L6R",ls:"Lesson 6  Patterns in Human Behavior",nm:"本文理解",pts:["財布実験：240個を町に落とし、入っている写真で返却率が変化","赤ちゃんの写真入りが最多の88%で返却","クッキー実験：1枚ずつ包むと平均24日、包まないと6日で完食","空腹での買い物は不必要な食べ物を買いがち→先に何か食べる"],qs:[
+{q:"財布の実験で研究者たちがしたことは？",c:["240個の財布を町に落とした","24個の財布を学校に置いた","2,400個をネットで配った","40個を交番に届けた"],a:0,ex:"researchers dropped 240 wallets around a city。"},
+{q:"いちばん多く返ってきたのは何の写真入りの財布？",c:["赤ちゃん","子犬","家族","老夫婦"],a:0,ex:"赤ちゃんの写真入りは88%が返却された。"},
+{q:"1枚ずつ包まれたクッキーの箱を食べ終えるのにかかった平均日数は？",c:["24日","6日","12日","2日"],a:0,ex:"包み紙を開ける手間がブレーキになり24日かかった。"},
+{q:"包まれていない箱は平均何日で食べ終えた？",c:["6日","24日","30日","10日"],a:0,ex:"手が止まらず平均6日で完食。"},
+{q:"ダイエット中に選ぶと良いのはどちらの箱？",c:["1枚ずつ包まれた箱","包まれていない箱","冷凍した箱","小さい箱"],a:0,ex:"Box A（個包装）。開ける手間が食べすぎを防ぐ。"},
+{q:"空腹のまま買い物に行くとどうなりやすい？",c:["不必要な食べ物を買いやすい","何も買わない","安い物だけ買う","必ず半額品を買う"],a:0,ex:"hungry shoppers buy more unnecessary food。"},
+{q:"この課の結論として最も適切なのは？",c:["人間の行動にはパターンがあり、知れば生活に活かせる","人間の行動は予測不可能","実験は無意味である","買い物はしない方がよい"],a:0,ex:"行動パターンを知って上手に付き合うのがテーマ。"},
+{q:"買い物の前にすると良いと本文が勧めていることは？",c:["何か食べてから行く","走ってから行く","寝てから行く","歌ってから行く"],a:0,ex:"eat something before you enter a supermarket。"}]},
+{id:"L7V",ls:"Lesson 7  No Plastic or No Future",nm:"単語",pts:["whale クジラ ／ stomach 胃 ／ victim 犠牲者","tragedy 悲劇 ／ occur 起こる ／ consume 〜を消費する・食べる","decompose 分解される ／ float 浮く ／ inventor 発明家","reduce 減らす ／ reuse 再利用する"],qs:[
+{q:"whale の意味は？",c:["クジラ","サメ","イルカ","アザラシ"],a:0,ex:"whale＝クジラ。タイの海岸に打ち上げられたクジラの話。"},
+{q:"stomach の意味は？",c:["胃","頭","心臓","のど"],a:0,ex:"stomach＝胃。発音は「スタマック」。"},
+{q:"victim の意味は？",c:["犠牲者","勝者","医者","泥棒"],a:0,ex:"victim＝犠牲者・被害者。海の生き物たちが victims。"},
+{q:"tragedy の意味は？",c:["悲劇","喜劇","物語","奇跡"],a:0,ex:"tragedy＝悲劇。This tragedy will occur more often。"},
+{q:"occur の意味は？",c:["起こる","終わる","隠れる","数える"],a:0,ex:"occur＝happen のかたい語。"},
+{q:"consume の意味は？",c:["〜を消費する、食べる","〜を作る","〜を運ぶ","〜を数える"],a:0,ex:"sea creatures consume microplastics（食べてしまう）。"},
+{q:"decompose の意味は？",c:["分解される","作曲する","凍る","集まる"],a:0,ex:"decompose＝分解する・される。ペットボトルは約400年。"},
+{q:"reduce の意味は？",c:["〜を減らす","〜を増やす","〜を繰り返す","〜を返す"],a:0,ex:"reduce＝減らす。3R（reduce, reuse, recycle）の筆頭。"},
+{q:"reuse の意味は？",c:["〜を再利用する","〜を拒否する","〜を破壊する","〜を回収する"],a:0,ex:"re＋use＝もう一度使う。"},
+{q:"float の意味は？",c:["浮く","沈む","流す","飛ぶ"],a:0,ex:"floating plastic＝海に浮かぶプラスチック。"},
+{t:1,q:"タイピング：「犠牲者」を英語で（v で始まる1語）",a:["victim"],ex:"victim。fall victim to 〜（〜の犠牲になる）。"},
+{t:1,q:"タイピング：「〜を減らす」を英語で（r で始まる1語）",a:["reduce"],ex:"reduce。名詞は reduction。"}]},
+{id:"L7G",ls:"Lesson 7  No Plastic or No Future",nm:"文法（関係副詞 where/when・関係代名詞 what）",pts:["関係副詞 where：場所＋where＋完全な文","関係副詞 when：時を表す語＋when＋完全な文","関係代名詞 what＝the thing(s) which「〜すること・もの」","what節は名詞のかたまり（主語・目的語になれる）"],qs:[
+{q:"the places （　） we find so much plastic waste",c:["where","which","who","what"],a:0,ex:"先行詞が場所＋後ろが完全な文→関係副詞 where。"},
+{q:"関係副詞 where の先行詞になるのは？",c:["場所を表す語","人を表す語","時を表す語","理由を表す語"],a:0,ex:"the place/town/country など。時なら when。"},
+{q:"The day （　） humans become victims will soon come.",c:["when","where","who","which"],a:0,ex:"先行詞 the day（時）→関係副詞 when。"},
+{q:"I want to visit the town （　） you were born.",c:["where","which","what","who"],a:0,ex:"後ろが完全な文（you were born）→ where。"},
+{q:"We need to think about （　） we can do.",c:["what","that","where","who"],a:0,ex:"関係代名詞 what＝「〜すること」。先行詞を含む。"},
+{q:"関係代名詞 what の意味は？",c:["〜すること・もの","なぜ","どこで","いつ"],a:0,ex:"what＝the thing(s) which。What he said＝彼が言ったこと。"},
+{q:"This is the house （　） I lived ten years ago.",c:["where","which","what","whom"],a:0,ex:"lived の後ろに欠けなし（完全な文）→ where。"},
+{q:"（　） she said made everyone happy.",c:["What","Where","When","Who"],a:0,ex:"What she said（彼女が言ったこと）が文全体の主語。"},
+{t:1,q:"タイピング：the town （　） I was born（w で始まる関係副詞）",a:["where"],ex:"where。先行詞が場所＋完全な文。"}]},
+{id:"L7R",ls:"Lesson 7  No Plastic or No Future",nm:"本文理解",pts:["2018年タイ：クジラの胃から約9kgの黒いレジ袋","ウミガメはレジ袋をクラゲと間違えて食べる（調査の約75%）","マイクロプラスチック＝5mm以下。年間約800万トンが海へ","The Ocean Cleanup：オランダの発明家ボイヤン・スラットが創設"],qs:[
+{q:"2018年、タイの海岸で見つかった病気のクジラの胃に入っていたものは？",c:["約9kgの黒いレジ袋","魚の骨","漁の網","ペットボトル100本"],a:0,ex:"nearly nine kilograms of black plastic bags。クジラは死んでしまった。"},
+{q:"ウミガメがレジ袋を食べてしまう理由は？",c:["クラゲと間違えるから","甘い匂いがするから","遊ぶため","巣の材料にするため"],a:0,ex:"mistake plastic bags for jellyfish（クラゲと間違える）。"},
+{q:"調査されたアオウミガメのうち、プラスチックごみを食べていた割合は？",c:["約75%","約10%","約30%","約5%"],a:0,ex:"green sea turtles caught for studies の約75%。"},
+{q:"マイクロプラスチックとは？",c:["5mm以下の小さなプラスチック片","5cm以下のごみ","電子レンジ用の容器","微生物の一種"],a:0,ex:"smaller than five millimeters。回収がほぼ不可能。"},
+{q:"毎年、海に行き着くプラスチックの量は？",c:["約800万トン","約8トン","約800トン","約8億トン"],a:0,ex:"about eight million tons of plastic end up in the ocean。"},
+{q:"ペットボトルが分解されるのにかかるとされる年数は？",c:["約400年","約4年","約40年","約4万年"],a:0,ex:"plastic bottles take about 400 years to decompose。"},
+{q:"The Ocean Cleanup を創設したのは？",c:["オランダの発明家ボイヤン・スラット","アメリカの大学教授","日本の高校生","イギリスの漁師"],a:0,ex:"Boyan Slat。19歳でNPOを立ち上げた。"},
+{q:"回収したプラスチックで作られたサングラス1本の売上で何ができる？",c:["サッカー場24面分の海域をきれいにできる","船が1隻買える","クジラを1頭救える","発電ができる"],a:0,ex:"1本200ドル。売上が次の回収活動の資金になる。"}]},
+{id:"L8V",ls:"Lesson 8  Oh My Cod!",nm:"単語",pts:["cod タラ ／ batter （揚げ物の）衣 ／ vinegar 酢","nutritious 栄養価の高い ／ separately 別々に ／ instant 即座の","serve （食事を）出す ／ explore 探検する","fisherman 漁師 ／ shore 岸"],qs:[
+{q:"cod の意味は？",c:["タラ","サケ","マグロ","イワシ"],a:0,ex:"cod＝タラ。タイトルは Oh My God! のダジャレ。"},
+{q:"batter の意味は？",c:["（揚げ物の）衣","バター","バット","粉ミルク"],a:0,ex:"fish coated in batter＝衣をつけた魚。野球の打者と同綴り。"},
+{q:"vinegar の意味は？",c:["酢","塩","油","砂糖"],a:0,ex:"salt and vinegar＝塩と酢。イギリスの定番の味付け。"},
+{q:"nutritious の意味は？",c:["栄養価の高い","おいしい","高価な","新鮮な"],a:0,ex:"cheap and nutritious food＝安くて栄養のある食べ物。"},
+{q:"separately の意味は？",c:["別々に","一緒に","すぐに","静かに"],a:0,ex:"最初、魚とポテトは separately（別々に）売られていた。"},
+{q:"instant の意味は？",c:["即座の","遅い","本物の","巨大な"],a:0,ex:"an instant hit＝たちまち大人気。"},
+{q:"serve の意味は？",c:["（食事を）出す","切る","煮る","売る"],a:0,ex:"someone served them together＝一緒に出した。"},
+{q:"explore の意味は？",c:["〜を探検する","〜を爆発させる","〜を輸出する","〜を説明する"],a:0,ex:"explored North America＝北米を探検した。"},
+{q:"fisherman の意味は？",c:["漁師","釣り堀","魚屋","船長"],a:0,ex:"fisherman＝漁師。複数形は fishermen。"},
+{q:"shore の意味は？",c:["岸","沖","船","網"],a:0,ex:"walk to the shore＝岸まで歩く。"},
+{t:1,q:"タイピング：「（食事を）出す」を英語で（s で始まる1語）",a:["serve"],ex:"serve。名詞は service。"},
+{t:1,q:"タイピング：「〜を探検する」を英語で（e で始まる1語）",a:["explore"],ex:"explore。explorer＝探検家。"}]},
+{id:"L8G",ls:"Lesson 8  Oh My Cod!",nm:"文法（分詞構文・非制限用法・過去完了）",pts:["分詞構文：〜ing「…しながら、…して」","関係代名詞の非制限用法：コンマ＋which/who（that は不可）","過去完了 had＋過去分詞：過去のある時点よりさらに前","by the end of 〜（〜の終わりまでには）と過去完了は相性◎"],qs:[
+{q:"I waited for the bus, （　） to my favorite songs.",c:["listening","listened","listen","to listen"],a:0,ex:"分詞構文。「お気に入りの歌を聞きながら待った」。"},
+{q:"分詞構文が表す意味として正しいのは？",c:["〜しながら（同時の動作）など","命令","受け身だけ","未来"],a:0,ex:"基本は「〜しながら」「〜して、それから」。"},
+{q:"Every town had its fish-and-chip shop, （　） was often called a chippie.",c:["which","that","what","who"],a:0,ex:"コンマ付き（非制限用法）では that は使えない。"},
+{q:"非制限用法（コンマ付き）で使えない関係代名詞は？",c:["that","which","who","whose"],a:0,ex:"コンマ＋that は不可。これは超頻出ルール。"},
+{q:"By the end of the century, the cod （　） almost gone.",c:["had","has","have","was"],a:0,ex:"had gone＝過去完了。「〜までにはいなくなっていた」。"},
+{q:"過去完了（had＋過去分詞）が表すのは？",c:["過去のある時点よりさらに前のこと","現在の習慣","未来のこと","命令"],a:0,ex:"「過去の中の過去」＝大過去。"},
+{q:"When I arrived, the movie （　） already started.",c:["had","has","will have","is"],a:0,ex:"着いた（過去）より前に始まっていた→過去完了。"},
+{q:"I have a sister, （　） lives in London.",c:["who","that","what","whom"],a:0,ex:"コンマ＋who。補足説明を加える非制限用法。"},
+{t:1,q:"タイピング：The train （　） already left when we got there.（h で始まる助動詞）",a:["had"],ex:"had already left＝すでに出てしまっていた。"}]},
+{id:"L8R",ls:"Lesson 8  Oh My Cod!",nm:"本文理解",pts:["フィッシュ・アンド・チップス＝衣をつけて揚げた白身魚＋ポテト。塩と酢で","産業革命期の労働者の「安い・栄養・早い」食事として広まった","19世紀半ばに2つが一緒に出され大ヒット→各町に chippie","原料のタラは乱獲で激減→持続可能な漁業が課題"],qs:[
+{q:"フィッシュ・アンド・チップスとはどんな料理？",c:["衣をつけて揚げた白身魚とフライドポテト","魚の寿司","魚のパイ","魚のスープ"],a:0,ex:"white-meat fish coated in batter ＋ chips（ポテト）。"},
+{q:"伝統的に何をかけて食べる？",c:["塩と酢","しょうゆ","ケチャップだけ","チーズ"],a:0,ex:"salt and vinegar。"},
+{q:"労働者に人気になった理由は？",c:["安くて栄養があり早く食べられたから","高級だったから","珍しかったから","王室が好んだから"],a:0,ex:"産業革命期、安く栄養があり調理が早い食事が必要だった。"},
+{q:"揚げた魚とポテトは最初どう売られていた？",c:["別々に売られていた","最初から一緒だった","禁止されていた","無料で配られた"],a:0,ex:"sold separately→19世紀半ばに一緒に出されて大ヒット。"},
+{q:"「chippie（チッピー）」とは？",c:["フィッシュ・アンド・チップスの店","ポテトの種類","魚の名前","新聞紙のこと"],a:0,ex:"ロンドンだけで約1,200軒あった。"},
+{q:"昔は何に包んで売られていた？",c:["古新聞","ビニール袋","アルミホイル","木の箱"],a:0,ex:"wrapped in old newspaper。今は衛生上、専用紙に。"},
+{q:"15世紀にヨーロッパの人々が北米沖で見たものは？",c:["岸まで魚の背中の上を歩けるほど大量のタラ","クジラの群れ","氷山","海賊船"],a:0,ex:"You can walk to the shore on the backs of the fish。"},
+{q:"20世紀の終わりまでに、タラはどうなった？",c:["乱獲でほとんどいなくなっていた","増えすぎていた","湖に移動していた","値段が下がっていた"],a:0,ex:"the cod had almost gone。持続可能な漁業が問われている。"}]},
+{id:"L9V",ls:"Lesson 9  Is Esports a Real Sport?",nm:"単語",pts:["stare じっと見つめる ／ shout 叫ぶ ／ venue 会場","tournament 大会 ／ compete 競争する ／ worldwide 世界中で","popularity 人気 ／ sharply 急激に ／ scholarship 奨学金","obtain 〜を得る ／ acknowledge 〜を認める"],qs:[
+{q:"stare の意味は？",c:["じっと見つめる","階段をのぼる","始める","立つ"],a:0,ex:"stare at 〜＝〜をじっと見つめる。"},
+{q:"venue の意味は？",c:["会場","通り","価値","冒険"],a:0,ex:"venue＝大会・コンサートなどの会場。"},
+{q:"tournament の意味は？",c:["大会","旅行","練習","チーム"],a:0,ex:"the National High School Esports Tournament。"},
+{q:"compete の意味は？",c:["競争する","完成する","比較する","計算する"],a:0,ex:"compete＝競う。名詞は competition。"},
+{q:"worldwide の意味は？",c:["世界中で","世界遺産","広い世界","世界観"],a:0,ex:"worldwide＝世界中で（に）。形容詞にも副詞にもなる。"},
+{q:"popularity の意味は？",c:["人気","人口","政策","可能性"],a:0,ex:"popular の名詞形。population（人口）と混同注意！"},
+{q:"sharply の意味は？",c:["急激に","ゆっくりと","正確に","静かに"],a:0,ex:"increase sharply＝急増する。グラフ描写の必須語。"},
+{q:"scholarship の意味は？",c:["奨学金","学校行事","学者","授業料"],a:0,ex:"obtain scholarships＝奨学金を得る。"},
+{q:"obtain の意味は？",c:["〜を得る","〜を維持する","〜を含む","〜を訓練する"],a:0,ex:"obtain＝get のかたい語。"},
+{q:"acknowledge の意味は？",c:["〜を認める","〜を知らせる","〜を断る","〜を祝う"],a:0,ex:"acknowledges esports players as professional athletes。"},
+{t:1,q:"タイピング：「集中（力）」を英語で（c で始まる1語）",a:["concentration"],ex:"concentration。concentrate（集中する）の名詞形。"},
+{t:1,q:"タイピング：「〜を得る」を英語で（o で始まる1語）",a:["obtain"],ex:"obtain。奨学金・ビザなど公的なものに使う。"}]},
+{id:"L9G",ls:"Lesson 9  Is Esports a Real Sport?",nm:"文法（知覚動詞・使役動詞・ask if）",pts:["知覚動詞 see/hear＋O＋現在分詞「Oが〜しているのを見る・聞く」","知覚動詞＋O＋原形「Oが〜するのを（最初から最後まで）」","使役 let＋O＋原形（許可）／ make＋O＋原形（強制）","ask＋人＋if節「〜かどうか尋ねる」"],qs:[
+{q:"I saw a girl （　） by a tree.",c:["crying","cried","cries","to cry"],a:0,ex:"泣いている最中を見た→現在分詞 crying。"},
+{q:"I heard someone （　） my name.",c:["call","called by","calls","to call"],a:0,ex:"知覚動詞＋O＋動詞の原形。to不定詞は不可。"},
+{q:"知覚動詞の文型で C に使えないのは？",c:["to不定詞","動詞の原形","現在分詞","過去分詞"],a:0,ex:"×saw her to cry。原形・分詞はOK。"},
+{q:"Some universities （　） esports players obtain scholarships.",c:["let","want","hope","tell"],a:0,ex:"let＋O＋原形＝「（望み通り）〜させてあげる」。"},
+{q:"The teacher made us （　） the room.",c:["clean","to clean","cleaning","cleaned"],a:0,ex:"make＋O＋原形＝「（強制的に）〜させる」。to は不要。"},
+{q:"let の意味として正しいのは？",c:["（望み通り）〜させてあげる","無理やり〜させる","〜を禁止する","〜を頼む"],a:0,ex:"let＝許可、make＝強制。使い分けが頻出。"},
+{q:"My friends asked me （　） I wanted to play esports.",c:["if","that","what","which"],a:0,ex:"ask＋人＋if節＝「〜かどうか尋ねる」。"},
+{q:"ask＋人＋if節 の if の意味は？",c:["〜かどうか","もし〜なら","たとえ〜でも","〜だけれど"],a:0,ex:"この if＝whether。「もし」ではない。"},
+{t:1,q:"タイピング：This movie always makes me （　）.（「笑う」を表す動詞の原形）",a:["laugh"],ex:"make me laugh＝私を笑わせる。原形のまま。"}]},
+{id:"L9R",ls:"Lesson 9  Is Esports a Real Sport?",nm:"本文理解",pts:["全国高校eスポーツ大会：346チームが参加","esports＝electronic sports。プレイヤー1.3億人超・観戦者約5.3億人","IOCは東京五輪直前の2021年にeスポーツイベントを開催","利点：体力に関係なく楽しめる／チームワーク／世界中と交流"],qs:[
+{q:"全国高校eスポーツ大会に参加したチーム数は？",c:["346チーム","46チーム","3,460チーム","134チーム"],a:0,ex:"There were 346 teams in the tournament。"},
+{q:"esports は何の略？",c:["electronic sports","extra sports","exciting sports","european sports"],a:0,ex:"electronic（電子の）sports。2000年頃から広まった用語。"},
+{q:"世界のeスポーツプレイヤーの数は？",c:["1億3000万人以上","1300万人","130万人","13億人"],a:0,ex:"more than 130 million esports players。"},
+{q:"eスポーツの試合を観戦する人の数は？",c:["約5億3000万人","約5300万人","約530万人","約53億人"],a:0,ex:"about 530 million people watch esports games。"},
+{q:"IOCが初のeスポーツイベントを開いたのはいつ？",c:["東京オリンピック直前の2021年","1964年","2000年","2024年"],a:0,ex:"in 2021 just before the Tokyo Olympics。"},
+{q:"eスポーツの良い点として本文で挙げられて「いない」ものは？",c:["体力が必ず向上する","体力に関係なく楽しめる","チームワークの価値を学べる","世界中の人と交流できる"],a:0,ex:"挙げられたのは後ろの3つ。内容一致の典型ひっかけ。"},
+{q:"アメリカ政府はeスポーツ選手をどう扱っている？",c:["プロ選手と認め、特別なビザを与えている","入国を禁止している","重く課税している","学生として扱っている"],a:0,ex:"acknowledges them as professional athletes ＋ special visa。"},
+{q:"日本の高校のeスポーツ部について本文が述べているのは？",c:["人気にもかかわらず多くない","ほぼ全校にある","法律で禁止されている","プロ選手しか入れない"],a:0,ex:"not many ... in spite of its popularity。"}]},
+{id:"L10V",ls:"Lesson 10  Never Too Late to Learn and Relearn",nm:"単語",pts:["creator 創作する人 ／ attention 注目 ／ curved 曲線の","sustainability 持続可能性 ／ awareness 意識 ／ scrap 端切れ","leather 革 ／ overpopulation 過剰繁殖 ／ landscape 風景","detour 回り道 ／ contribute 貢献する"],qs:[
+{q:"creator の意味は？",c:["創作する人","消費者","批評家","観客"],a:0,ex:"create＋or。the creator of the work＝作品の作者。"},
+{q:"attention の意味は？",c:["注目","出席","態度","延長"],a:0,ex:"attract wide public attention＝広く世間の注目を集める。"},
+{q:"curved の意味は？",c:["曲線の","真っ直ぐな","固い","彫られた"],a:0,ex:"curved designs＝曲線的なデザイン。carved（彫られた）と区別。"},
+{q:"sustainability の意味は？",c:["持続可能性","安定","生存","補助"],a:0,ex:"sustainable（L5）の名詞形。彼女の作品のテーマ。"},
+{q:"awareness の意味は？",c:["意識","別れ","驚き","注意報"],a:0,ex:"raise awareness＝意識を高める。"},
+{q:"scrap の意味は？",c:["端切れ、くず","スープ","写真","計画"],a:0,ex:"scraps of leather＝革の端切れ。"},
+{q:"leather の意味は？",c:["革","羽","天気","はしご"],a:0,ex:"leather＝革。エゾシカの革を作品に使った。"},
+{q:"overpopulation の意味は？",c:["過剰繁殖、人口過剰","過労","上書き","人口減少"],a:0,ex:"エゾシカの overpopulation（増えすぎ）が問題に。"},
+{q:"detour の意味は？",c:["回り道","出発","破壊","旅行"],a:0,ex:"take detours＝回り道をする。本文のキーワード。"},
+{q:"contribute の意味は？",c:["貢献する","継続する","contributeは反対する","収集する"],a:0,ex:"contribute to the world＝世界に貢献する。"},
+{t:1,q:"タイピング：「革」を英語で（l で始まる1語）",a:["leather"],ex:"leather。ea の綴りに注意。"},
+{t:1,q:"タイピング：「回り道」を英語で（d で始まる1語）",a:["detour"],ex:"detour。de＋tour（回る）。"}]},
+{id:"L10G",ls:"Lesson 10  Never Too Late to Learn and Relearn",nm:"文法（仮定法過去）",pts:["I wish＋仮定法過去「〜ならいいのに」（現実とのギャップ）","仮定法過去：If＋過去形, S＋would/could＋原形","be動詞は主語が何でも were が原則","without 〜「〜がなければ」＝if it were not for 〜"],qs:[
+{q:"I wish I （　） make clothes with no waste.",c:["could","can","will","must"],a:0,ex:"I wish＋仮定法過去。助動詞は could/would。"},
+{q:"I wish の後ろの動詞の形は？",c:["過去形（仮定法過去）","現在形","未来形","原形"],a:0,ex:"過去形だが「今」の話。現実との距離を表す。"},
+{q:"If I （　） rich, I would travel all over the world.",c:["were","am","is","will be"],a:0,ex:"仮定法過去の be動詞は were が原則。"},
+{q:"仮定法過去が表すのは？",c:["現実に反する仮定","過去の事実","未来の予定","命令"],a:0,ex:"「もし〜なら（実際は違うけど）」。"},
+{q:"If I had a time machine, I （　） visit the Edo period.",c:["would","will","can","do"],a:0,ex:"帰結節は would/could/might＋原形。"},
+{q:"（　） detours, I wouldn't be designing now.",c:["Without","With","Within","About"],a:0,ex:"without 〜＝「〜がなければ」。if節の代わりになる。"},
+{q:"without 〜 と同じ意味になるのは？",c:["if it were not for 〜","because of 〜","thanks to 〜","instead of 〜"],a:0,ex:"without＝if it were not for＝but for。書き換え頻出。"},
+{q:"「彼が私の友達ならいいのに」を英語で言うと？",c:["I wish he were my friend.","I wish he is my friend.","I hope he was my friend.","He wishes I am a friend."],a:0,ex:"I wish＋仮定法過去（were）。実際は友達ではない含み。"},
+{t:1,q:"タイピング：If I （　） you, I would study every day.（be動詞）",a:["were"],ex:"If I were you＝私があなたなら。アドバイスの定型。"}]},
+{id:"L10R",ls:"Lesson 10  Never Too Late to Learn and Relearn",nm:"本文理解",pts:["篠原ともえ：歌手・タレント出身のデザイナー。2022年国際デザイン賞受賞","受賞作＝着物×エゾシカ革×水墨画の山々。革の端切れを活用","着物は一枚の布からほぼ無駄なく作られる→サステナビリティ","2019年・40歳で大学へ学び直し。「回り道をしてもいい」"],qs:[
+{q:"篠原ともえさんが2022年に受けたのは？",c:["国際的なデザイン賞","ノーベル賞","音楽賞","映画賞"],a:0,ex:"革の端切れから作った服が国際デザイン賞を受賞。"},
+{q:"受賞作品が組み合わせた日本の3つの要素は？",c:["着物・エゾシカ・水墨画の山々","寿司・富士山・桜","茶道・俳句・庭園","刀・城・歌舞伎"],a:0,ex:"the kimono, Ezo deer, and mountains in ink wash painting。"},
+{q:"着物の特徴として本文で述べられているのは？",c:["一枚の布から作られ、ほとんど無駄が出ない","何枚もの布をつなぐ","革でできている","洗うことができない"],a:0,ex:"made from one piece of cloth and almost none of it is wasted。"},
+{q:"エゾシカについて本文が述べている問題は？",c:["増えすぎて森に被害を与え、皮は捨てられていた","絶滅しかけている","都会に出没している","病気が流行している"],a:0,ex:"overpopulation。駆除後の皮の多くが捨てられていた。"},
+{q:"篠原さんのデビューは？",c:["1995年・高校生のときに歌手として","2019年・デザイナーとして","1990年・モデルとして","2000年・俳優として"],a:0,ex:"debuted as a singer in 1995 when she was a high school student。"},
+{q:"2019年、40歳のときに彼女がしたことは？",c:["大学に戻ってデザインを学び直した","芸能界を引退した","海外に移住した","会社を売却した"],a:0,ex:"went back to university to brush up her design skills。"},
+{q:"「回り道」についての彼女の考えは？",c:["ときどき回り道をしてもいい。回り道がなければ今の自分はない","回り道は時間の無駄","最短距離が常に正しい","運に任せるべきだ"],a:0,ex:"It's all right to take detours now and then。"},
+{q:"この課のタイトルが伝えたいことは？",c:["学ぶこと・学び直すことに遅すぎることはない","早く学ぶべきだ","学びは若者だけのもの","学びには終わりがある"],a:0,ex:"It is never too late to learn and relearn。"}]}
+];
+/* 深掘り解説（さらに詳しく）。QBの各ブロックの問題順と対応 */
+const DX={
+PRE:[
+"日本語は「てにをは」があるので語順が自由ですが、英語は語順そのものが意味を決めます。I love you. と You love me. は単語が同じでも語順で意味が逆になります。だから英語では語順がいちばん大切なルールです。",
+"discussと同じく前置詞を付けたくなる他動詞に marry（〜と結婚する）、enter（〜に入る）、attend（〜に出席する）があります。「marry with her」は間違いで marry her が正解。定期テストでも入試でも超頻出のひっかけです。",
+"英語は「短い情報は名詞の前、長い情報は名詞の後ろ」に置きます。on the book のような前置詞のかたまり、さらに Lesson 5 で習う関係代名詞（the man who started 〜）も同じ「後ろから説明」の仲間。この感覚が読解の土台になります。",
+"形容詞の使い方は2つ：①名詞の前に置く（cute monkeys）②be動詞の後ろに置く（The monkeys are cute.）。①を限定用法、②を叙述用法と呼びます。どちらも「名詞の様子」を説明している点は同じです。",
+"副詞は動詞だけでなく、形容詞（very cute の very）、他の副詞（very fast）、文全体（Luckily, ...）も修飾できる万能選手。「〜ly で終わる語は副詞が多い」も覚えておくと便利です（friendly は形容詞なので注意）。",
+"the dog on the chair ＝「いすの上の犬」。英語は核になる名詞（dog）を先に言い、説明（on the chair）を後ろに足します。日本語と順番が逆なので、英語を読むときは「名詞→どんな？」の順で理解する癖をつけましょう。",
+"基本は S+V ですが、疑問文（Do you...?）や There is 構文では語順が変わります。それでも「主語と動詞をまず見つける」のが英文を読む第一歩。長い文ほどこの基本が効いてきます。",
+"副詞には時（yesterday, now）・場所（here, there）・様子（fast, well）・頻度（always, usually, often, sometimes, never）があります。頻度の副詞は一般動詞の前、be動詞の後ろに置くというルールがテストで狙われます。"],
+L1V:[
+"go sightseeing（観光に行く）の形で頻出。go shopping, go fishing と同じ go 〜ing の仲間です。sightseeing は「観光（すること）」、tourism は「観光業」という産業全体を指す、という違いも覚えておくと差がつきます。",
+"count（数える）+ less（〜できない・〜がない）。同じ -less の仲間に endless（終わりのない）、priceless（値段がつけられないほど貴重な）、careless（不注意な）。逆に -ful（careful 注意深い）とセットで覚えると語彙が一気に増えます。",
+"動詞は construct（建設する）。街でよく見る UNDER CONSTRUCTION は「工事中」。con（共に）+ struct（積む）が語源で、structure（構造）、instruction（指示）も同じ仲間です。",
+"exotic は「遠い外国から来た、珍しくて魅力的な」というプラスのイメージの語。foreign（外国の）が中立なのに対し、exotic には「異国情緒」というワクワク感が含まれます。",
+"日本語の「アピールする」は自己PRの意味で使いますが、英語の appeal to 〜 は「〜の心に訴えかける・〜を引きつける」。The photo appeals to visitors.（その写真は観光客を引きつける）のように使います。名詞の appeal は「魅力」。",
+"Mecca はイスラム教最大の聖地（サウジアラビア）。そこから「ある分野のファンが集まる中心地」の意味に広がりました。a mecca for anime fans（アニメファンの聖地）のように for とセットで使います。",
+"nowadays は「（昔と違って）近頃は」という対比のニュアンスを含むので、現在形と一緒に使います。過去形と使うのは×。同じ意味の these days、recently（最近：現在完了・過去形と）との使い分けは入試頻出です。",
+"seek は look for よりかたい語で「（仕事・助け・体験など）を求める」。seek-sought-sought の不規則変化も重要。job seeker（求職者）、seek help（助けを求める）のように使います。",
+"sight（景色）+ seeing（見ること）の複合語。-ght- の綴りは sight, night, light, right に共通するパターンなのでまとめて覚えましょう。",
+"now + a + days と分解すると覚えやすい。最後の s を忘れるミスが多いので注意。「近頃は」と訳し、文頭か文末に置くのが普通です。",
+"-ism は「〜業・〜主義」を作る接尾辞。tourism（観光業）、journalism（報道業）。tourist（観光客）、tour（旅行）と家族でまとめて覚えましょう。",
+"神社＝shrine、寺＝temple の区別は英検・入試の定番。日本文化を紹介する英作文やスピーチでは必ず使う単語です。"],
+L1G:[
+"現在形は「今この瞬間」ではなく「いつもそうであること（習慣・事実）」を表します。every day, usually, often が目印。3単現の s は①現在形②主語が3人称単数、の2条件がそろったときだけ付きます。",
+"last month, yesterday, 〜 ago は過去形のサイン。go-went-gone のような不規則動詞は、英語の中で最もよく使う動詞ほど不規則です（be, have, do, make, take...）。音読して口で覚えるのが最短ルート。",
+"過去進行形 was/were + 〜ing は「過去のある瞬間に、ちょうど〜していた」。at that time（そのとき）や when I called you（電話したとき）のような「時点」とセットで使われます。写真のワンシーンを切り取るイメージです。",
+"one of the + 最上級 + 複数名詞（〜のうちのひとつ）は超頻出の形。「ひとつ」なのに名詞は複数形になるのがポイントで、テストの空所補充で狙われます。主語になったときの動詞は one に合わせて単数で受けます。",
+"be famous for 〜 は「〜（という特徴・名物）で有名」。be famous as 〜「〜として有名」との区別が大切：Kyoto is famous for its temples.（寺で有名）／He is famous as a singer.（歌手として有名）。",
+"now, right now, Look! などが現在進行形のサイン。ただし know, like, want, have（持っている）などの状態動詞は進行形にしないのが原則。これは Lesson が進んでも何度も出てくる重要ルールです。",
+"3単現の s には変化パターンがあります：enjoy→enjoys（そのまま）、study→studies（子音+y は ies）、watch→watches（ch, sh, s, o は es）。does, goes もこの仲間です。",
+"進行形には「一時的」という含みがあります。I live in Tokyo. はずっと住んでいる感じ、I am living in Tokyo. は一時的に住んでいる感じ。ネイティブはこのニュアンスを使い分けています。",
+"go-went-gone は最重要不規則動詞のひとつ。同じく頻出の come-came-come、run-ran-run と混ざりやすいので、3つセットで音読して区別しましょう。"],
+L1R:[
+"伏見稲荷大社は全国に約3万社ある稲荷神社の総本宮。外国人に人気の理由は、無料・24時間参拝可能・写真映えする千本鳥居の3つがよく挙げられます。「お稲荷さん」はもともと五穀豊穣の神様です。",
+"「千本鳥居」と呼ばれますが、実際には山全体で1万基以上あるといわれます。本文の countless（数えきれないほどの）はこの実感から来ています。鳥居のトンネルは山頂まで約2時間の参道に続きます。",
+"鳥居は個人や企業が祈願や感謝のために奉納したもので、大きさによって値段が違います。黒い文字で奉納者名と建立日（the construction dates）が書かれているので、歩きながら読むと歴史が見えてきます。",
+"Japow は Japan + powder（粉雪）から生まれた造語。海外のスキーヤー・スノーボーダーの間で SNS を通じて広まりました。外国人が日本の雪を求めて来る現象は「雪のインバウンド」とも呼ばれます。",
+"ニセコ（北海道倶知安町・ニセコ町周辺）は2000年代にオーストラリア人スキーヤーの間で人気に火がつき、今では世界中から観光客が集まります。地価上昇率が日本一になったこともあるほどの人気ぶりです。",
+"観光は「モノを見る」から「コトを体験する」へ変化しています。スポーツツーリズム（スキー・サイクリング）、文化ツーリズム（茶道・着物・座禅体験）はその代表例。日本政府も体験型観光を推進しています。",
+"日本の雪が軽い理由は、シベリアからの冷たく乾いた空気が日本海の水蒸気を吸って山にぶつかり、水分の少ない雪を大量に降らせるから。世界的にも珍しい「上質なパウダースノー」が毎日降る場所なのです。",
+"fresh experiences（新鮮な体験）は本文のキーフレーズ。観光客は「見物」ではなく「体験」を求めて日本に来る、というのがこの課の結論です。要約問題ではこの語を使えるようにしておきましょう。"],
+L2V:[
+"dis（離れて）+ tract（引く）＝注意を引き離す。attract は at（〜の方へ）+ tract（引く）＝引き寄せる。tract（引く）の仲間には tractor（トラクター＝引く機械）も。語源で覚えると忘れません。",
+"predator（捕食者）の反対は prey（獲物・エサ）。理科の食物連鎖（food chain）でも使われる語です。形容詞は predatory（捕食性の）。",
+"attract の名詞は attraction。遊園地の「アトラクション」は「人を引きつけるもの」が原義です。形容詞 attractive（魅力的な）も超頻出。magnet（磁石）が鉄を引きつけるイメージで覚えましょう。",
+"mate は「仲間」が基本義で、classmate（同級生）、teammate（チームメイト）、roommate（ルームメイト）に入っています。動物の文脈では「つがいの相手」。動詞では「交尾する」の意味もあります。",
+"century はラテン語 centum（100）から。percent（100につき）、centimeter（100分の1メートル）、centipede（ムカデ＝100本足）まで同じ語源。the 21st century は2001〜2100年を指します。",
+"purpose の頻出表現：on purpose（わざと）、for the purpose of 〜ing（〜する目的で）。類義語は aim（狙い）、goal（目標）。What is the purpose of 〜?（〜の目的は何か）は内容理解問題の定番の聞かれ方です。",
+"jellyfish は jelly（ゼリー）+ fish。魚ではないのに fish が付く生き物は他に starfish（ヒトデ）、cuttlefish（コウイカ）など。複数形は jellyfish のまま変化しないことが多い点も特徴です。",
+"squid（イカ）と octopus（タコ）はセットで覚える基本語。firefly squid（ホタルイカ）は富山湾の春の風物詩で、英語圏の科学記事でもこの名前で紹介されています。",
+"century の複数形は centuries（y を ies に）。for centuries（何世紀もの間）は現在完了とセットでよく使われる表現です。",
+"purpose の綴りは pur + pose。propose（プロポーズする・提案する）や suppose（思う）と似ているので書き分けに注意しましょう。",
+"creature は create（創造する）から「創造されたもの」＝生き物。sea creatures（海の生き物）。クリーチャーはゲーム用語にもなっています。",
+"method は way より体系的・科学的な「方法」。methods for early cancer detection（がんを早期発見する方法）。methodology は「方法論」です。"],
+L2G:[
+"受け身の by 〜（〜によって）は、する側が「誰でもいい・言わなくても分かる・不明」のときは省略されます。English is spoken in many countries. に by people を付けないのはそのためです。",
+"経験を表す現在完了の決まり文句：Have you ever 〜?（今までに〜したことがある？）、I have never 〜（一度も〜したことがない）、once／twice／three times（回数）。been to（行ったことがある）も最頻出です。",
+"since の後ろは「起点」：since 2020、since last March、since he was five（文もOK）。for の後ろは「期間の長さ」：for ten years、for a long time。空所補充で最も狙われる使い分けです。",
+"have been 〜ing（現在完了進行形）は「動作がずっと続いている」ことを強調します。ただし know, like, live などの状態動詞は進行形にせず、ふつうの現在完了（have known）で継続を表す点がテストで狙われます。",
+"現在完了は「過去から今までつながっている」時制なので、yesterday、last week、〜 ago、when 〜?（いつ？）のような「過去の一点」を表す語句とは一緒に使えません。これは共通テストでも定番の知識です。",
+"by 以外の前置詞を使う受け身は熟語として暗記：be known to 〜（〜に知られている）、be covered with 〜（〜で覆われている）、be made of/from 〜（〜でできている）、be interested in 〜（〜に興味がある）。",
+"現在完了の3用法の見分けは副詞がカギ：経験＝ever, never, once／継続＝for, since／完了＝just, already, yet。yet は疑問文で「もう」、否定文で「まだ」と訳が変わるのもポイントです。",
+"受け身+現在完了は have/has + been + 過去分詞 の語順で固定。「ずっと〜されてきた」。Firefly squid have been caught in Toyama for a long time. のように for とセットで使われます。",
+"know-knew-known と同じ「母音が変わって -n で終わる」パターン：grow-grew-grown、throw-threw-thrown、fly-flew-flown。まとめて音読すると一度に4つ覚えられます。"],
+L2R:[
+"ホタルイカは体中に発光器を持ち、敵に襲われると一斉に光って目をくらませ、その隙に逃げます。お腹側の光で月明かりに溶け込み、下から見上げる敵に見つからないようにする「カウンターイルミネーション」という技も使います。",
+"ホタルの点滅パターンは種類ごとに違い、同じ種のオスとメスが光の合図で交信します。ゲンジボタルとヘイケボタルでも点滅の間隔が違うため、光り方を見れば種類が分かるそうです。",
+"深海とは太陽光がほぼ届かない水深200m以深のこと。深海生物の約8割が自分で光を作れる（生物発光＝bioluminescence）といわれます。光が貴重な世界だからこそ、光が武器になるのです。",
+"チョウチンアンコウは頭から伸びた突起の先端を光らせ、エサと勘違いして近づいた小魚を大きな口で丸のみにします。光るのは共生する発光バクテリアの働きによるものです。",
+"ホタルは『万葉集』の和歌や、清少納言『枕草子』の「夏は夜。…蛍の多く飛びちがひたる」など、千年以上前から日本文学に登場します。本文の for centuries（何世紀もの間）はこの伝統を指しています。",
+"オワンクラゲの緑色蛍光タンパク質（GFP）を発見した下村脩博士は2008年にノーベル化学賞を受賞。GFPは見たい細胞だけを光らせる「目印」として、がん研究や脳科学で世界中で使われています。",
+"この課の構成は「同じ光でも目的が違う」：ホタルイカ＝防御、ホタル＝求愛、アンコウ＝捕食、クラゲ＝人間が医療に応用。for different purposes が全体をまとめるキーフレーズです。",
+"富山湾のホタルイカは春に産卵のため海面近くに集まり、定置網で漁が行われます。海岸が青白く光る「ホタルイカの身投げ」は天然記念物にも指定された春の絶景です。"],
+L3V:[
+"muscle の語源はラテン語 musculus（小さなネズミ）。力こぶが皮膚の下で動く様子がネズミに見えたからだとか。形容詞は muscular（筋肉質の）。c を発音しない黙字にも注意。",
+"height は high の名詞形で発音は「ハイト」（hで始まりtで終わる）。同じ型の名詞：weigh→weight（重さ）、long→length（長さ）、strong→strength（強さ）、wide→width（幅）。形容詞とセットで覚えましょう。",
+"congratulate は「人」を目的語に取り、congratulate 人 on 事（〜のことで人を祝う）の形で使います。間投詞の Congratulations!（おめでとう！）は最後の s を忘れがちなので注意。",
+"pretend to be 〜（〜のふりをする）、pretend that 〜 の形で使います。子どもの「ごっこ遊び」は pretend play。本文では筋トレをする「ふり」のパフォーマンスを指しています。",
+"donate（寄付する）の名詞は donation（寄付）、人は donor（寄付者・提供者）。Lesson 1 の鳥居の donors（奉納者）と同じ単語です。血液や臓器の「ドナー」もこの語から来ています。",
+"achieve（達成する）の名詞は achievement（達成・業績）。achieve a goal／a dream の形で頻出。同義語の accomplish もセットで覚えると長文で強くなります。",
+"modest は「謙虚な」のほか「（数や量が）控えめな、ささやかな」の意味もあります（a modest salary）。名詞は modesty（謙虚さ）。日本人の美徳としてよく英作文の話題になります。",
+"dumbbell は dumb（口のきけない・音のしない）+ bell（鐘）。教会の鐘を鳴らす練習用に「音の出ない鐘」を振ったのが起源といわれます。barbell（バーベル）は bar（棒）+ bell。",
+"muscle の sc は発音しない黙字。同じ黙字を含む語：island の s、knife の k、Wednesday の d。綴りと音のズレはまとめて覚えるのがコツです。",
+"donate のアクセントは前（DOnate）。寄付の文化は英語圏で非常に身近で、charity（慈善）、volunteer（ボランティア）とセットで長文に頻出するテーマです。",
+"professional は略して pro。profession（職業）は「公に宣言した仕事」が語源で、医師・弁護士など専門職を指します。対義語は amateur（アマチュア）。",
+"childhood は child＋hood（状態）。neighborhood（近所）、adulthood（成人期）も同じ -hood の仲間。in my childhood（子どもの頃に）。"],
+L3G:[
+"to不定詞を目的語に取る動詞（want, hope, decide, plan, try）と、動名詞を取る動詞（enjoy, finish, stop）は対で覚えます。「未来に向かう動詞は to、すでにしていることは 〜ing」というイメージが目安になります。",
+"目的を表す副詞的用法は「なぜ？」に答える to。意味を強調したいときは in order to 〜 に置き換えられます。文頭に置くこともでき、To see the game, I went to the stadium. のようになります。",
+"形容詞的用法は名詞の直後に置くのがルール：something to drink（飲み物）、time to study（勉強する時間）、ability to hit（打つ能力）、homework to do（やるべき宿題）。「〜するための・〜すべき」と訳します。",
+"decide to 〜（〜することに決める）の名詞は decision（決定）で、make a decision（決断する）という熟語も頻出。decide on + 名詞（〜に決める）の形もあります。",
+"「〜するために」の to不定詞は、help children（子どもを助ける）のような動詞句を後ろに続けられます。注意：目的の意味で for 〜ing は使えません（×for supporting children）。これは英作文でよくあるミスです。",
+"something／anything／nothing に形容詞を付けるときは直後に置きます：something cold to drink（何か冷たい飲み物）。「-thing + 形容詞 + to不定詞」の語順は並べ替え問題の超定番です。",
+"名詞的用法の3パターン：①主語 To play baseball is fun. ②補語 My dream is to be a doctor. ③目的語 I want to get a job. ①は It is fun to play baseball. と書き換えられ、この It を形式主語と呼びます。",
+"cheer 人 on（〜を応援する）は目的語が代名詞のとき cheer him on の語順になります。bring a flag to cheer on my team（チームを応援するために旗を持っていく）は目的の to の良い例文です。",
+"to の後ろは必ず動詞の原形。3単現の s や過去形にしないこと。see と watch はどちらも「見る」ですが、watch は動いているものをじっと見るニュアンスです。"],
+L3R:[
+"吉田正尚（よしだ・まさたか）選手は福井県出身の外野手。身長173cmはメジャーでは小柄ですが、フルスイングが信条の強打者で、オリックス時代には首位打者を獲得。2023年からボストン・レッドソックスでプレーしました。",
+"ホームラン後にベンチでダンベルのおもちゃを掲げて筋トレのまねをするのは、チームの定番セレブレーション。メジャーリーグでは各チームが個性的なホームラン・パフォーマンスを持っています。",
+"came true は come true（実現する）の過去形。dream が主語になる点に注意：His dream came true.（彼の夢は実現した）。make one's dream come true（夢を実現させる）の形も頻出です。",
+"ホームラン1本につき10万円という「成果連動型」の寄付は、ファンがホームランを喜ぶたびに寄付も増える仕組み。スポーツ選手の社会貢献（フィランソロピー）の好例として紹介されています。",
+"寄付先はカンボジア・バングラデシュ・フィリピンなどの developing countries（発展途上国）の子どもたち。Lesson 5 のザンビアのバナナペーパーも同じ「途上国支援」のテーマでつながっています。",
+"「小さな目標を一つずつ」は心理学でも有効性が認められた方法（スモールステップ）。大きな夢を小さなブロックに分けて一つずつクリアする——実はこの学習アプリの仕組みそのものです。",
+"プロのアスリートは competition（競技）だけでなく entertainment（観客を楽しませること）も仕事のうち、という考え方が本文の背景にあります。performance には「演技・出来栄え」両方の意味があります。",
+"still（今もなお）がポイント。「夢をかなえた後でも変わらず謙虚」という対比を作っています。modest（謙虚）は日本でもアメリカでも好かれる人柄として描かれています。"],
+L4V:[
+"pastime は pass（過ごす）+ time（時間）から。hobby より気軽な「暇つぶし・娯楽」も含む広い語です。national pastime（国民的娯楽）といえばアメリカでは野球を指します。",
+"express は ex（外へ）+ press（押す）＝心の中のものを外へ押し出す＝表現する。expression は「表現」と「表情」の両方の意味。express train（急行列車）は「速く押し出される」イメージから。",
+"concept は con（しっかり）+ cept（つかむ）＝頭でつかんだもの＝概念。accept（受け入れる）、except（除く）も同じ cept の仲間。カタカナの「コンセプト」とほぼ同じ意味で使えます。",
+"ordinary（普通の）の反対は extraordinary（並外れた）＝ extra（外）+ ordinary。「普通の外側」だから「とびぬけた」。out of the ordinary（並外れて）という熟語もあります。",
+"object はアクセント位置で品詞が変わる代表語：OBject（名詞：物・対象）／obJECT（動詞：反対する）。同じパターンに REcord／reCORD、PREsent／preSENT があり、発音問題の定番です。",
+"traditional の名詞は tradition（伝統）。語源は「手渡すこと」で、trade（取引）と同じ仲間。世代から世代へ手渡されてきたものが伝統、というわけです。",
+"大きさの順に rock（岩）＞ stone（石）＞ pebble（小石）。枯山水の説明では rocks, stones, and pebbles と3つ並べて使われています。英語は大きさで語を使い分けるのが好きな言語です。",
+"miniature は「ミニチュアの・縮小された」。mini はこの語の短縮形です。発音は「ミニアチャー」に近く、最初の i にアクセント。in miniature（縮小版で）という表現もあります。",
+"express の綴りは ex + press で -ss 終わり。press（押す）を含む仲間：impress（印象づける）、depress（落ち込ませる）。セットで覚えると一気に3語増えます。",
+"culture の語源は cultivate（耕す）と同じ「耕すこと」。土地を耕すのが agriculture（農業）、心を耕すのが culture（文化）。覚え方として最高の語源ペアです。",
+"「作品」の意味の work は数えられる名詞（a work, works）。works of art（芸術作品）。「仕事」の意味では数えられない、という使い分けが入試で問われます。",
+"completely は complete（完全な）＋ly。同義語の totally、entirely とセットで覚えると、長文の言い換え問題に強くなります。"],
+L4G:[
+"分詞1語だけなら名詞の前（a sleeping baby）、語句を伴うなら名詞の後ろ（the boy standing over there）。この「2語以上なら後ろ」ルールは、Pre-Lesson 3 の「長い説明は後ろから」の原則そのものです。",
+"過去分詞の後置修飾は「〜される・された」という受け身の関係：comic books translated into English（英語に翻訳された漫画）、a watch made in Japan（日本製の時計）。名詞とのあいだに「される」関係があるかを確認しましょう。",
+"最上級のルール：短い語は -est（the tallest）、長い語（3音節以上や -ful, -ous など）は the most + 原級。範囲の表し方は of + 複数（of the three）、in + 場所・集団（in Japan, in my class）です。",
+"比較級の綴り変化：big→bigger（短母音+子音は重ねる）、easy→easier（子音+y は i に）、large→larger（e で終わればrだけ）。than とセットで使い、差を強調するなら much taller（ずっと高い）。",
+"as 〜 as の間は必ず原級（もとの形）。否定形 not as 〜 as … は「…ほど〜ない」で、比較級 less 〜 than と同じ意味になります。Hana is not as tall as her mother. ＝ 母ほど背が高くない。",
+"take-took-taken。a picture taken by 〜（〜によって撮られた写真）は写真・芸術の話題で頻出のフレーズ。by の代わりに in 2020（2020年に撮られた）など時や場所が続くことも多いです。",
+"見分けのコツは「名詞が自分でするのか・されるのか」：exciting game（試合が人を興奮させる→現在分詞）／excited fans（ファンは興奮させられる→過去分詞）。boring／bored、surprising／surprised も同じ仲間で超頻出。",
+"比較級の強調は much, even, far, a lot（ずっと〜）を使います。very は原級専用（very tall ○／very taller ×）。「much + 比較級」は語法問題の超定番なので必ず覚えましょう。",
+"speak の現在分詞 speaking。「英語を話している少女」は少女が「話す側」なので現在分詞です。もし the language spoken in Australia なら言語は「話される側」なので過去分詞になります。"],
+L4R:[
+"田中達也さんは1981年熊本県生まれのミニチュア写真家・見立て作家。2011年から毎日1作品を発表する MINIATURE CALENDAR を一日も休まず続けており、SNSのフォロワーは数百万人。NHK連続テレビ小説のタイトル映像も手がけました。",
+"もとは趣味（pastime）でミニチュアを集めて撮影していたのが、SNSでの発信をきっかけに世界的な仕事になりました。「好きなことの積み重ねがキャリアになる」という、高校生へのメッセージにつながるエピソードです。",
+"ハンバーグに添えられたブロッコリーが「木」に見えた——この日常の気づきが見立て作品の原点。同じ発想で、食パンをベッドに、ピーマンを洞窟に見立てた作品もあります。身近なものほど面白い、が彼の哲学です。",
+"見立ては茶道・俳句・庭園・落語など日本文化の根底にある美意識。月見団子を月に、白い砂を海に見立てるなど、「あるものを別のものとして楽しむ」想像力の伝統が、現代のミニチュアアートにつながっています。",
+"枯山水（かれさんすい）は水を使わずに石と砂で山水を表す庭園様式。京都・龍安寺の石庭が世界的に有名で、白い砂の砂紋は水の流れ、立てた石は山や島を表します。15個の石が一度に全部見えない配置も有名な仕掛けです。",
+"田中さんの作品キャプションは日本語と英語の2か国語。見立ては言葉が通じなくても伝わる視覚言語なので、share the concept of mitate with people all over the world（世界中の人と共有する）が実現できるのです。",
+"find a favorite thing and pursue it（好きなことを見つけて追い続けよ）。pursue（追求する）は pursue a dream／a career の形で大学入試長文に頻出。名詞は pursuit（追求）です。",
+"見立ての本質は「視点の転換」。同じものでも見方を変えれば全く別のものに見える——これは創造性（creativity）の核心で、勉強でも「別の解き方はないか」と考える姿勢につながります。"],
+L5V:[
+"fiber は「繊維」。食物繊維は dietary fiber、光ファイバーは optical fiber（光を通すガラスの細い糸）。バナナの茎から取れる丈夫な繊維が紙の原料になります。",
+"stem は植物の「茎」。flower（花）、leaf（葉）、root（根）、seed（種）と一緒に植物パーツとして覚えましょう。ちなみに理系教育のSTEMは Science・Technology・Engineering・Math の頭文字で別物です。",
+"harvest は動詞「収穫する」と名詞「収穫（期）」の両方で使えます。the harvest season（収穫の秋）。har- の部分は「秋」を意味する古い語に由来し、英語の autumn 文化と深く結びついた語です。",
+"poverty は poor（貧しい）の名詞形。SDGs の目標1が No Poverty（貧困をなくそう）。the poverty line（貧困線＝最低限の生活に必要な収入の境界）という社会科の用語も英文記事に頻出します。",
+"illegal は il（否定）+ legal（合法の）。l で始まる語の否定は il-（illegal, illogical）、r なら ir-（irregular）、m/p なら im-（impossible）と、後ろの音に合わせて変わるのが英語の否定接頭辞のルールです。",
+"sustainable は sustain（支え続ける）+ able（できる）。SDGs＝Sustainable Development Goals（持続可能な開発目標）の S です。環境・社会問題の英文では最重要キーワードのひとつ。",
+"technique は個人の「技・手法」、technology は社会の「科学技術」。和紙づくりの職人技は techniques、AIやスマホは technology と使い分けます。形容詞は technical（技術的な）。",
+"enormous は e（外）+ norm（基準）＝基準を外れた大きさ＝巨大な。norm（基準）の仲間に normal（普通の）、abnormal（異常な）。huge, gigantic, vast も「巨大」の類義語としてまとめて覚えましょう。",
+"poverty の綴りは pover + ty。-ty で終わる抽象名詞の仲間：safety（安全）、variety（多様性）、society（社会）。アクセントは最初の po にあります。",
+"sustainable の綴りは sus + tain + able。tain（保つ）を含む仲間：maintain（維持する）、contain（含む）、obtain（得る）。語源 tain ファミリーは入試単語の宝庫です。",
+"education は educate（教育する）の名詞形。SDGs の目標4が Quality Education（質の高い教育をみんなに）。educational（教育の）も頻出です。",
+"wild＝野生の。wildlife（野生生物）も重要語。形が似た wide（広い）、mild（穏やかな）との見間違いに注意しましょう。"],
+L5G:[
+"主格の関係代名詞は「先行詞 + who/which/that + 動詞」の形。who 以下のかたまりが前の名詞を説明する——Pre-Lesson 3 で学んだ「名詞を後ろから説明する」仕組みの完成形です。",
+"先行詞が「物・動物」なら which か that。直後に動詞が来ていれば主格です。主格の関係代名詞は省略できないので、空所問題で「省略できるか？」と問われたら後ろの形を確認しましょう。",
+"「名詞 + 名詞 + 動詞」の並び（the part of bananas you eat）を見たら、間に目的格の関係代名詞が省略されています。これに気づけるかどうかが英文を正しく読める人とそうでない人の分かれ目です。",
+"省略できるのは目的格だけ。主格を省略すると the man started... のように動詞が2つ続いて文が壊れるためです。「後ろが S+V なら省略可、後ろがいきなり V なら省略不可」と覚えましょう。",
+"seem to 〜（〜のようだ）は It seems that 〜 に書き換え可能：Life seems to be better. ＝ It seems that life is better. seem + 形容詞（He seems happy.）の形も一緒に覚えておくと英作文で便利です。",
+"目的格 whom は書き言葉的で、会話では who か省略が普通です。ただし前置詞の直後では whom しか使えません（the person with whom I talked）。この使い分けは難関私大で問われます。",
+"who は人専用、which は物専用、that は両方OK。さらに先行詞に最上級・all・only・every が付くときは that が好まれます（the best movie that I have ever seen）。迷ったら that が安全牌です。",
+"先行詞 a website（単数の物）+ 動詞 tells → 主格の which/that。関係代名詞の後ろの動詞は先行詞に一致させるので tells と3単現になります。ここを tell にするミスがテストで狙われます。",
+"目的格の that は which と交換可能ですが、先行詞が人なら who(m)/that。さらに省略が最も自然な形です。the paper he made ＝ the paper that he made ＝ the paper which he made、3つとも同じ意味です。"],
+L5R:[
+"ザンビアはアフリカ南部の内陸国で、首都はルサカ。公用語は英語です。ムフウェ村は野生動物の宝庫・南ルアングワ国立公園のすぐそばにあり、サファリ観光の拠点でもあります。",
+"村の問題は連鎖していました：仕事がない→現金収入のため野生動物を密猟→動物が減る→観光資源も減る。バナナペーパーは「密猟以外の安定した仕事」を作ることで、この悪循環を断ち切りました。",
+"このプロジェクトは日本の会社とザンビアの人々が共同で立ち上げた「ワンプラネット・ペーパー」。フェアトレード（公正な取引）の考え方に基づき、働く人に適正な賃金が支払われています。",
+"バナナの茎は一度実をつけると枯れるため、収穫のたびに大量に廃棄されます。つまり「毎年必ず出るゴミ」が「毎年必ず採れる資源」に変わったのがこのプロジェクトの発明です。木を切らずに紙を作れる点も画期的。",
+"バナナの繊維だけでは紙になりにくいため、楮（こうぞ）を使う日本の和紙の伝統技術と組み合わせました。福井県の越前和紙の職人たちが協力したことで、美しく丈夫な紙が完成したのです。",
+"バナナペーパーは名刺・折り紙・ノートのほか、封筒や卒業証書、お菓子のパッケージにも使われています。企業がSDGsの取り組みとして名刺に採用する例が日本で増えています。",
+"親に収入が生まれると学費が払え、子どもが学校に通えるようになります。教育を受けた子は将来より良い仕事に就ける——「教育は貧困の連鎖を断つ最大の鍵」というのが国際協力の基本的な考え方です。",
+"バナナの「幹」に見える部分は、葉の根元が何重にも巻き重なった「偽茎（ぎけい）」で、木の幹ではありません。植物学的にバナナは世界最大級の草（herb）。本文の enormous herbs はこの事実を指しています。"]
+,
+L6V:[
+"behave（ふるまう）の名詞形。human behavior（人間の行動）は心理学・経済学の頻出テーマ。この課のような研究分野は behavioral economics（行動経済学）と呼ばれ、ノーベル賞受賞者も出ている注目分野です。",
+"experience（経験）との混同がテストの定番。experiment は「検証のための実験」で、do/conduct an experiment（実験を行う）の形で使います。ex-（外に）+ peri（試す）が語源で、expert（熟練者）も同じ仲間。",
+"research（研究・調査）+ er（人）。re（何度も）+ search（探す）＝繰り返し探究する人。動詞 research、名詞 research（不可算）もあわせて覚えましょう。",
+"wallet は札入れタイプの財布。小銭入れや女性用の財布は purse と呼ぶことが多い。lost wallet（落とし物の財布）、drop one's wallet（財布を落とす）。",
+"percent は数字とセット（88 percent）、percentage は「割合」という概念そのもの。a high/low percentage of 〜（高い／低い割合の〜）の形で使います。",
+"on average（平均して）が最重要熟語。average score（平均点）、above/below average（平均より上／下）。グラフや実験データの英文に必ず出てくる語です。",
+"participate（参加する）+ ant（人）＝参加者。take part in ＝ participate in（〜に参加する）。実験では「被験者」の意味でも使われます。",
+"hesitate to do（〜するのをためらう）。会話では Don't hesitate to ask.（遠慮なく聞いてね）が定番表現。名詞は hesitation（ためらい）。",
+"un（否定）+ necessary（必要な）。necessary の綴り（c は1つ、s は2つ）はスペリング問題の超頻出。「ネックレスのcは1本、靴下のsは2足」という覚え方が有名です。",
+"purchase は buy のかたい語で、店の領収書や経済の文章でよく使われます。名詞「購入（品）」も同形：make a purchase（買い物をする）。",
+"behavior はアメリカ綴り、behaviour はイギリス綴り。color/colour、center/centre と同じ米英の違いのパターンです。",
+"average の綴りは a-v-e-r-a-g-e。日本語の「アベレージ」はこの語。野球の打率も batting average と言います。"],
+L6G:[
+"It は形式主語で、本当の主語は that 節。「that 以下のことは natural だ」という構造です。It is natural/certain/surprising/true that 〜 のように形容詞を入れ替えて使い回せる、英作文の万能テンプレートです。",
+"look＋形容詞＝「〜に見える」。look at（〜を見る）とは別物。同じ S+V+C を作る五感系の動詞に sound（〜に聞こえる）、smell（〜のにおいがする）、taste（〜の味がする）があり、すべて後ろは形容詞です。",
+"feel-felt-felt の不規則変化。fall（落ちる）-fell-fallen と混同しやすいので注意。feel tired（疲れを感じる）、feel happy のように、feel＋形容詞で気分・体調を表します。",
+"make+O+C「OをCにする」は第5文型の代表。The movie made me sleepy.（映画は私を眠くさせた）など日常会話でも多用。主語が「人を〜な気持ちにさせる原因」になるのが特徴です。",
+"補語（C）は主語や目的語の状態を説明する語。S+V+C は S＝C（The cookies＝delicious）、S+V+O+C は O＝C（you＝unhappy）の関係が成り立つかどうかで文型を見分けられます。",
+"C に副詞は入れられない——これが最大の注意点。×The news made us happily。「幸せに」と訳せても、状態を表すのは形容詞 happy。形容詞と副詞の区別は定期テストの最頻出ポイントです。",
+"It is certain that 〜（〜は確実だ）。certain には「確実な」のほかに a certain man（ある男）のように「ある〜」の意味もあり、こちらは長文で出会います。",
+"「〜そうに見えた」は looked＋形容詞。日本語の「〜そうに」につられて副詞 happily を選ばせるのが出題者の狙い。見た目・印象は形容詞で表す、と覚えましょう。",
+"make me sad／happy／angry／sleepy など、感情の形容詞は make とセットで例文ごと暗記すると、英作文でそのまま使えます。",],
+L6R:[
+"この財布実験は、スコットランドのエディンバラで実際に行われた心理学実験がもとになっています。「人の善意はどんなときに引き出されるか」を調べた有名な研究です。",
+"返却率は赤ちゃん88%、子犬53%、家族48%、老夫婦28%。「赤ちゃんを守りたい」という本能的な感情が、見知らぬ人の財布を届けるという行動まで変える、と説明されています。",
+"1枚ずつ包むと「開ける」というひと手間がブレーキになります。行動経済学では「摩擦（friction）」と呼ばれ、やめたい習慣にはわざと手間を増やすのが有効、という応用ができます。",
+"包みがないと手が止まらず平均6日。「見えやすく、取りやすい物ほど消費が増える」——お菓子を棚の奥にしまう、スマホを別の部屋に置いて勉強する、など日常に応用できる原理です。",
+"ダイエットには個包装が有利。逆に、続けたい習慣は手間を減らす——単語帳を机に開きっぱなしにする、アプリをホーム画面の1ページ目に置く、など「摩擦の逆利用」が勉強に効きます。",
+"空腹時は脳が「カロリーを確保せよ」モードになり、判断が変わってしまいます。対策は、買い物リストを作る・食後に買い物に行くこと。",
+"「人間の行動にはパターン（クセ）がある。それを知れば、意志力に頼らずに環境を整えて自分をコントロールできる」——これがこの課のメッセージです。",
+"本文の助言は eat something before you enter a supermarket（スーパーに入る前に何か食べる）。知識がそのまま節約につながる、すぐ使える行動経済学です。"],
+L7V:[
+"whale＝クジラ。クジラの群れは a pod of whales。whale watching（ホエールウォッチング）は観光英語でも頻出。この課は2018年にタイで実際に起きた事件から始まります。",
+"stomach の発音は「スタマック」で、ch は k の音。stomachache（腹痛）、on an empty stomach（空腹のままで）。綴りと音のギャップが狙われる単語です。",
+"victim＝事故・災害・犯罪などの「犠牲者・被害者」。fall victim to 〜（〜の犠牲になる）。この課では海の生き物たち、そしてやがて人間も victim になると警告しています。",
+"tragedy＝悲劇。ギリシャ悲劇が語源で、形容詞は tragic（悲劇的な）。反対語は comedy（喜劇）。シェイクスピアの四大悲劇も four great tragedies と言います。",
+"occur は happen のかたい語。過去形・過去分詞は occurred と r を重ねる点がスペリング問題で頻出。It occurred to me that 〜（ふと〜と思いついた）という重要表現もあります。",
+"con（完全に）+ sume（取る）＝consume（消費する・食べ尽くす）。consumer（消費者）、consumption（消費）。消費税は consumption tax です。",
+"de（分離）+ compose（組み立てる）＝decompose（分解する・される）。compose は「作曲する・構成する」で、composer は作曲家。分解の逆は組み立て、と語源でつながっています。",
+"3R＝reduce（減らす）・reuse（再利用する）・recycle（再資源化する）。優先順位もこの順番で、まず「減らす」が最重要とされています。名詞は reduction。",
+"reuse はそのままもう一度使うこと、recycle は資源に戻して作り直すこと。リサイクルより前に「そのまま使い回す」方が環境負荷が小さい、という区別も覚えておきましょう。",
+"float＝浮く。floating plastic（海に浮かぶプラスチック）。コーヒーフロートはアイスを「浮かべた」飲み物。反対語は sink（沈む）です。",
+"victim の綴りは v-i-c-t-i-m。victory（勝利）と最初が似ているので注意。「勝者 victor と犠牲者 victim は紙一重」と覚えると忘れません。",
+"reduce は re＋duce（導く）。produce（生産する）、introduce（紹介する）も同じ duce 仲間。語源で覚えると3語まとめて身につきます。"],
+L7G:[
+"関係副詞 where は「場所の先行詞＋where＋完全な文」。which との見分けは、後ろの文に主語や目的語の欠けがあるか：欠けあり→which、完全→where。これが最重要の判定法です。",
+"先行詞が the place/town/country/city など場所なら where。前置詞＋which（in which など）に書き換え可能で、書き換え問題も定番です。",
+"時を表す先行詞（the day/year/time）には when。The day will soon come when 〜 のように、先行詞と when が離れる形も長文でよく見ます。",
+"the town where you were born（あなたが生まれた町）。born の後ろに欠けがない完全な文なので where。×the town which you were born（in がないと不可）。",
+"関係代名詞 what は先行詞を自分の中に含み、「〜すること・もの」＝ the thing(s) which と書き換えられます。what we can do＝私たちにできること。",
+"what 節は名詞のかたまりとして、主語・目的語・補語のどこにでも入れます。What he said is true.（彼の言ったことは本当だ）では主語の働きをしています。",
+"live in the house の場合：the house which I lived in（in を残す）か the house where I lived（in 不要）の2通り。in があるかないかがwhere/whichの分かれ目です。",
+"What she said（彼女が言ったこと）が文全体の主語。what 節が主語のとき、動詞は単数で受けます（What he said is...）。",
+"where が正解。先行詞 the town（場所）＋ I was born（完全な文）。仕組みが分かれば機械的に解けるようになります。"],
+L7R:[
+"2018年6月、タイ南部で実際に起きた出来事。死んだゴンドウクジラの胃から80枚以上・約9kgのレジ袋が見つかり、世界中で報道されました。教科書はこのニュースから問題提起しています。",
+"水中を漂うレジ袋は、ゆらゆら揺れる姿がクラゲにそっくり。クラゲを主食にするウミガメが誤って食べてしまう事故が後を絶ちません。mistake A for B（AをBと間違える）も重要熟語。",
+"調査のために捕獲されたアオウミガメ（green sea turtles）の約75%の胃からプラスチックごみが見つかった、という衝撃的なデータです。",
+"マイクロプラスチック＝5mm以下の微細なプラスチック片。波や紫外線で砕けてできます。小さすぎて回収がほぼ不可能な点が最大の問題で、食物連鎖を通じて人間にも戻ってきます。",
+"年間約800万トン。「毎分ごみ収集車1台分のプラスチックが海に流れ込んでいる」という例えがよく使われます。2020年には3億トン以上のプラスチックが生産されました。",
+"ペットボトルは分解に約400年かかるとされます。今日捨てたボトルは、22世紀どころか25世紀まで残る計算。「人間の一生より長く残る」のがプラスチック問題の本質です。",
+"Boyan Slat（ボイヤン・スラット）は16歳のダイビング旅行で「魚よりレジ袋が多い」海を見たのをきっかけに、19歳で The Ocean Cleanup を創設（2013年）。若者が世界を動かした実例です。",
+"サングラスは海から回収したプラスチック製で1本200ドル。売上が次の回収活動の資金になる循環モデルで、1本でサッカー場24面分の海域の浄化に貢献できます。"],
+L8V:[
+"cod＝タラ。タイトル Oh My Cod! は Oh My God!（なんてこった）のダジャレ。英語圏ではこうした語呂合わせ（pun）が新聞の見出しでも大人気です。",
+"batter＝小麦粉・卵・水を混ぜた「衣」。野球の「打者」も batter で同綴り同音。butter（バター）と一字違いなので注意。fish coated in batter＝衣をまとった魚。",
+"vinegar＝酢。vin はフランス語でワインの意味で、「酸っぱくなったワイン」が語源。イギリスではフィッシュ・アンド・チップスにモルトビネガー（麦芽酢）をかけるのが定番です。",
+"nutritious＝栄養価の高い。nutrition（栄養）、nutrient（栄養素）。「安くて栄養がある」が産業革命期の労働者の食事の絶対条件でした。",
+"separately＝別々に。separate の綴りは sep-A-rate（真ん中は a）が鉄則で、×seperate は英語圏の人も間違える有名なスペルミスです。",
+"instant＝即座の。instant noodles（即席麺）、instant hit（たちまち大ヒット）。instantly（即座に）。インスタント食品のインスタントです。",
+"serve＝（食事を）出す・仕える。名詞は service。レストランで Dinner is served.（お食事の用意ができました）。テニスのサーブも「相手に球を差し出す」イメージ。",
+"ex（外へ）+ plore＝explore（探検する）。explorer（探検家）、exploration（探検）。宇宙開発の文章でも space exploration として頻出します。",
+"fisherman＝漁師（fish＋er＋man）。複数形は fishermen。最近は性別を問わない fisher という言い方も使われます。",
+"shore＝（海・湖の）岸。off the shore（沖合いで）、seashore（海辺）。「岸まで魚の背中を歩いて行ける」という有名な誇張表現で登場しました。",
+"serve の綴りは s-e-r-v-e。serve（仕える）→ service（奉仕）→ servant（召使い）は同族語のセットです。",
+"explore の綴りは ex-plore。explain（説明する）、export（輸出する）、express（表現する）など ex- で始まる動詞はまとめて覚えると効率的。"],
+L8G:[
+"分詞構文：〜ing で「…しながら・…して」。I waited for the bus, listening to music.＝音楽を聞きながらバスを待った。2つの文を1つにまとめる、書き言葉でよく使われる表現です。",
+"分詞構文の基本の意味は「同時（〜しながら）」と「連続（〜して、それから）」。文頭・文中・文末のどこにでも置けます。長文では「コンマ＋〜ing」を見たら分詞構文を疑いましょう。",
+"コンマ＋which/who は非制限用法といい、先行詞に「補足説明」を加えます。コンマなし（制限用法）は「他と区別する」働き。意味が変わるので、コンマの有無に注目する癖をつけましょう。",
+"非制限用法（コンマ付き）で that は使えない——これは入試最頻出ルールのひとつ。先行詞が固有名詞（人名・地名）のときも必ずコンマ＋who/which を使います。",
+"過去完了 had＋過去分詞は「過去のある時点よりさらに前」を表す「大過去」。by the end of 〜（〜の終わりまでには）のような期限の表現と相性抜群です。",
+"過去完了は「過去の中の過去」。2つの過去の出来事の前後関係をはっきりさせるための時制で、基準となる過去の時点（when I arrived など）が文中にあるのが目印です。",
+"「私が着いたとき（過去）、映画はすでに始まっていた（それより前）」→ had already started。already（すでに）、just（ちょうど）は過去完了とよくセットになります。",
+"a sister の後にコンマ＋who。コンマなしだと「（何人かいる姉のうち）ロンドンに住んでいる姉」という意味になってしまいます。1人しかいない人・物にはコンマ付きを使います。",
+"had が正解。「私たちが着いたときには、列車はすでに出てしまっていた」。残念な場面の定番表現で、英作文でもそのまま使えます。"],
+L8R:[
+"fish は白身魚（主にタラ）のフライ、chips はイギリス英語でフライドポテト。アメリカでは french fries と言い、イギリスで chips と言えばポテトチップスではない（チップスは crisps）——英米の違いの代表例です。",
+"塩とモルトビネガー（麦芽酢）をかけるのが伝統。イギリスの店のテーブルには必ず酢のボトルが置いてあります。日本の「天ぷら＋天つゆ」と比べる本文の構成もポイント。",
+"産業革命期、工場で長時間・低賃金で働く労働者には「安い・栄養がある・すぐ食べられる」食事が必要でした。社会の変化が新しい食文化を生んだ、という歴史の見方がこの課の核心です。",
+"揚げ魚売りとフライドポテト売りはもともと別の商売。19世紀半ばに誰かが一緒に出したところ instant hit（即大ヒット）に。「組み合わせ」が発明になる好例です。",
+"chippie はイギリスの親しみを込めた呼び名。20世紀初頭には英国のすべての町に店があり、ロンドンだけで約1,200軒。今もイギリスの国民食です。",
+"昔は保温と安さのために古新聞に包んで売られていました。現在は衛生上の理由で印刷のない専用紙に変わりましたが、新聞風のデザイン紙を使う店も多く、伝統の名残です。",
+"カナダ・ニューファンドランド島沖のグランドバンクスは世界最大級のタラ漁場でした。「魚の背中の上を歩いて岸まで行ける」は、当時の魚の多さを伝える有名な誇張表現です。",
+"乱獲（overfishing）により20世紀末にタラ資源は崩壊し、カナダ政府は1992年にタラ漁を全面停止しました。数万人が職を失ったこの事件は「持続可能な漁業」を世界が考えるきっかけになりました。"],
+L9V:[
+"stare at 〜＝〜をじっと見つめる。look より強く、目を離さず見続ける感じ。star（星）と綴りが似ているので注意。観客がスクリーンを stare している場面で登場します。",
+"venue＝大会・コンサートなどの「会場」。イベント関係の英語の必須語。avenue（大通り）と混同しないこと。",
+"tournament＝トーナメント・大会。中世ヨーロッパの騎士の馬上試合が語源です。championship（選手権・優勝）、final（決勝）もセットで。",
+"compete＝競争する（compete with/against 〜）。名詞 competition（競争・大会）、competitor（競争相手）、形容詞 competitive（競争の激しい）まで一族で覚えると強力です。",
+"worldwide＝世界中で・世界的な。world＋wide。形容詞にも副詞にもなります。nationwide（全国的に）も同じ作り方です。",
+"popularity＝人気（popular の名詞形）。population（人口）との混同がテストの超定番ひっかけ！「人気は popular＋ity、人口は population」と音で区別しましょう。",
+"sharply＝急激に。increase sharply（急増する）、decrease sharply（急減する）。グラフ・統計の英文の必須表現で、ゆるやかな変化は gradually を使います。",
+"scholarship＝奨学金（scholar 学者＋ship）。get/obtain/win a scholarship（奨学金を得る）。アメリカの大学スポーツでは奨学金が選手獲得の中心的な仕組みです。",
+"obtain＝get のかたい語で、「努力して手に入れる」ニュアンス。obtain a scholarship／a visa／permission（許可）など、公的・正式なものによく使われます。",
+"acknowledge＝（事実として）認める。ac＋knowledge（知識）で「知っていると認める」。本文では米国政府がeスポーツ選手をプロ選手と「認める」文脈で登場します。",
+"concentration＝集中（力）。concentrate（集中する）＋ion。con（共に）＋ center（中心）＝中心に集める、が語源です。eスポーツに必要な能力として本文に登場。",
+"obtain＝得る（get のかたい語）。ob＋tain（保つ）。maintain（維持する）、contain（含む）と同じ tain ファミリーです。"],
+L9G:[
+"知覚動詞（see/hear/feel/watch）＋O＋現在分詞＝「Oが〜している（最中の）のを見る・聞く」。crying なら泣いている途中の一場面を切り取ったニュアンスです。",
+"知覚動詞＋O＋動詞の原形＝「Oが〜するのを最初から最後まで見る・聞く」。call（呼ぶのを一部始終聞いた）と calling（呼んでいるのが聞こえた）のニュアンス差が問われます。",
+"知覚動詞の補語に to不定詞は使えません（×I saw her to cry）。ただし受け身にすると to が復活する（She was seen to cry.）——これは難関校向けの発展知識です。",
+"let＋O＋動詞の原形＝「Oに（望み通り）〜させてあげる」。Let me try.（やらせて）、Let's go.（＝Let us go）など、会話の最頻出パターンの土台です。",
+"make＋O＋原形＝「（強制的に）〜させる」。made us clean the room（私たちに掃除させた）。to を入れない（×made us to clean）のが最大の注意点です。",
+"使役動詞の強さ：make（強制）＞ have（依頼・当然）＞ let（許可）。3つとも「＋O＋動詞の原形」の形は共通です。get だけは get＋O＋to不定詞になります。",
+"ask＋人＋if/whether節＝「〜かどうか尋ねる」。間接疑問文の仲間で、if 節の中は普通の語順（S＋V）になります。",
+"この if は「もし」ではなく「〜かどうか」＝ whether。know/wonder/ask とセットで使われたら「かどうか」と訳します。文頭の If（もし）との区別は動詞を見れば分かります。",
+"make me laugh（私を笑わせる）。laugh は原形のまま。「この映画はいつも私を笑わせてくれる」は使役動詞の定番例文です。"],
+L9R:[
+"346チームが参加。全国高校eスポーツ選手権は2018年から実際に開催されている大会で、ロケットリーグや リーグ・オブ・レジェンドなどが競技種目になっています。",
+"esports＝electronic sports（電子スポーツ）。e- は electronic の頭文字で、e-mail（電子メール）と同じ作りの造語。2000年頃から世界に広まった比較的新しい言葉です。",
+"世界のeスポーツプレイヤーは1億3000万人以上。これは多くの伝統的スポーツの競技人口を上回る規模です。",
+"観戦者は約5億3000万人。「プレイする人」だけでなく「観る人」が億単位でいることが、eスポーツが「スポーツ」と呼ばれる大きな根拠になっています。",
+"IOC（国際オリンピック委員会）は東京五輪直前の2021年に初のeスポーツイベント（Olympic Virtual Series）を開催。オリンピックとeスポーツの距離は年々縮まっています。",
+"本文が挙げた3つの利点：①体力に関係なく楽しめる（regardless of body strength）②チームワークの価値を学べる③世界中の人と交流できる。「体力が向上する」とは書かれていない——内容一致問題の典型的なひっかけです。",
+"アメリカは2013年からプロゲーマーに「アスリートビザ」を発給しています。政府が公式に「選手」と認めた象徴的な出来事として本文で紹介されています。",
+"in spite of its popularity（人気にもかかわらず）日本の高校のeスポーツ部はまだ少ない、というのが本文の指摘。賛成・反対の両論を扱う「議論型」の課なので、意見と根拠の対応を整理して読むのがコツです。"],
+L10V:[
+"creator＝創作する人（create＋or）。日本語の「クリエイター」はこの語。the creator of this artwork（この作品の作者）。",
+"attention＝注目・注意。pay attention to 〜（〜に注意を払う）が最重要熟語。attract wide public attention（広く世間の注目を集める）は篠原さんの歌手時代の描写で登場します。",
+"curved＝曲線の（curve 曲線＋d）。carved（彫られた）と一字違いで意味がまったく異なるので、綴り問題で狙われます。着物の曲線的なデザインを指して使われました。",
+"sustainability＝持続可能性。L5で学んだ sustainable の名詞形です。大量生産・大量廃棄が問題のファッション業界では、今いちばん熱いキーワードになっています。",
+"awareness＝意識・気づき（aware 気づいている＋ness）。raise awareness（意識を高める）は、環境・社会問題の英文に必ずと言っていいほど出てくる決まり文句です。",
+"scrap＝端切れ・くず。scraps of leather（革の端切れ）。スクラップブックは「切り抜き帳」、廃車は scrap car。捨てられるものに新しい価値を見出すのが彼女の作品です。",
+"leather＝革。feather（羽）、weather（天気）と綴り・音が似た仲間。leather goods（革製品）、leather jacket（革ジャン）。",
+"overpopulation＝over（過剰）＋population（個体数・人口）。エゾシカの「増えすぎ」問題を指します。人間の人口過剰問題にも使われる、地理でも頻出の語です。",
+"detour＝回り道（de 離れて＋tour 回る）。take a detour（回り道をする）。本文では「人生の回り道」という比喩で使われ、この課のキーワードになっています。",
+"contribute to 〜＝〜に貢献する。名詞は contribution（貢献）。Designing is a way for me to contribute to the world. が本文の締めくくりの一文です。",
+"leather の綴りは l-e-a-t-h-e-r。ea を含む仲間：weather, feather, healthy。まとめて音読すると定着します。",
+"detour は de-tour と分解。tour（ツアー・回ること）が入っていると覚えれば忘れません。"],
+L10G:[
+"I wish＋仮定法過去＝「（現実には無理だけど）〜ならいいのに」。助動詞は could/would を使います。願望と現実のギャップを表す、ため息まじりの表現です。",
+"wish の後ろが過去形でも「過去の話」ではありません。I wish I had more time.（もっと時間があればなあ）＝今の話。過去形は「現実からの距離」を表す記号だと考えましょう。",
+"仮定法過去の be動詞は、主語が I でも he でも were が原則（口語では was も使われます）。If I were you,（私があなたなら）は丸ごと覚える鉄板フレーズ。",
+"直説法 If it rains tomorrow（実際に起こりうる条件）と仮定法 If I were rich（現実に反する仮定）の区別が最大のポイント。動詞の形（現在形か過去形か）で見分けます。",
+"帰結節（主節）は would/could/might＋動詞の原形。「If＋過去形, S＋would＋原形」をひとつの型として体に入れてしまうのが近道です。",
+"without 〜＝「〜がなければ」で、if 節の代わりになります。Without detours, I wouldn't be designing now.（回り道がなかったら、今デザインをしていないでしょう）が本文の実例。",
+"without 〜 ＝ if it were not for 〜 ＝ but for 〜。この3つの書き換えはテストの定番セットです。",
+"I wish he were my friend. が正解。仮定法なので were。「実際には友達ではない」という現実が裏に隠れています。",
+"If I were you, I would 〜（私があなたなら〜するのに）はアドバイスの定型表現。会話・英作文の両方で使える万能フレーズです。"],
+L10R:[
+"篠原ともえさんは歌手・タレント出身のデザイナー。2022年、エゾシカ革の端切れで作った服が、ニューヨークADC賞という国際的なデザイン賞を受賞しました。",
+"受賞作は「着物の意匠×エゾシカ革×水墨画の山々」という日本の3要素のミックス。日本文化の「無駄を出さない美学」を現代のデザインで世界に発信した作品です。",
+"着物は1枚の長い布（反物）を直線的に裁って作るため、端切れがほとんど出ません。この「無駄のなさ」が世界のサステナブルファッションの先駆けとして注目されています。",
+"エゾシカは天敵のオオカミがいなくなって増えすぎ、森林や農作物に深刻な被害を与えています。駆除された後、皮の多くは捨てられていた——その「もったいない」が作品の出発点です。",
+"1995年、高校生のときに歌手デビュー。カラフルな手作り衣装と明るいキャラクターで「シノラー」ブームを巻き起こし、テレビで大人気になりました。",
+"2019年、40歳で大学に入り直してデザインを学び直しました。社会人の「学び直し（リカレント教育）」の実例として描かれています。",
+"It's all right to take detours now and then. Without them, I wouldn't be designing now.——歌手・タレント時代という「回り道」の経験すべてが今のデザインに生きている、という人生観です。",
+"タイトルの It is never too late to learn and relearn.＝「学ぶこと・学び直すことに遅すぎることはない」。never too late to do は英作文でも使える名構文です。"]
+};
+let LV={mode:"dash",bid:null,order:[],i:0,wrong:[],ok:0,fb:null,perms:{},map:null};
+const shuffle=(a)=>{const x=[...a];for(let i=x.length-1;i>0;i--){const j=Math.floor(Math.random()*(i+1));[x[i],x[j]]=[x[j],x[i]];}return x;};
+let VBQ=null;
+function blockById(id){ if(id==="_MN") return VBQ; return QB.find(b=>b.id===id); }
+function curOrigin(){ const qi=LV.order[LV.i];
+  if(LV.bid==="_MN") return LV.map[qi];
+  return {bid:LV.bid, qi}; }
+function dxOf(bid,qi){ return (DX[bid]||[])[qi]||""; }
+function recMistake(ok){ learnGuard(); const o=curOrigin(); const k=o.bid+"|"+o.qi;
+  if(!ok){ const m=S.mistakes[k]||(S.mistakes[k]={n:0}); m.n++; m.d=todayStr(); save(); }
+  else if(LV.bid==="_MN"&&S.mistakes[k]){ delete S.mistakes[k]; save(); } }
+function learnGuard(){ if(!S.learn)S.learn={}; if(!S.learnDL)S.learnDL=S.settings.termEnd; if(!S.mistakes)S.mistakes={}; }
+function learnStats(){ learnGuard(); const ready=QB.filter(b=>b.qs.length);
+  const cleared=ready.filter(b=>S.learn[b.id]&&S.learn[b.id].cleared).length;
+  return {total:ready.length, cleared}; }
+function learnExpected(){ learnGuard(); const st=S.settings.startDate, dl=S.learnDL;
+  const tot=Math.max(1,diffD(st,dl)); const el=Math.max(0,Math.min(tot,diffD(st,todayStr())));
+  return Math.floor(learnStats().total*el/tot); }
+function learnTodayCard(){ const {total,cleared}=learnStats(); if(!total) return "";
+  const exp=learnExpected(); const d=cleared-exp;
+  const tag=d>=1?`<span class="tag green">予定より +${d} 先行</span>`:(d===0?`<span class="tag green">予定どおり</span>`:`<span class="tag red">予定より ${-d} 遅れ</span>`);
+  const pct=Math.round(cleared/total*100);
+  return `<div class="card"><div class="spread"><h2><span class="ic">📖</span>英語 教科書マスター</h2>${tag}</div>
+    <div class="bar" style="margin:8px 0 6px"><i class="${cleared>=total?'g':''}" style="width:${pct}%"></i></div>
+    <div class="spread"><span class="muted">${cleared} / ${total} ブロック クリア（目標ペース：${exp}）</span>
+    <button class="mini primary" onclick="go('learn')">学習する ▶</button></div></div>`; }
+function rLearn(){ learnGuard();
+  if(LV.mode==="quiz") return rQuiz();
+  if(LV.mode==="result") return rResult();
+  if(LV.mode==="block") return rBlockView();
+  if(LV.mode==="mn") return rMistakes();
+  const {total,cleared}=learnStats(); const exp=learnExpected(); const d=cleared-exp;
+  const tag=d>=1?`<span class="tag green">予定より +${d} 先行 🎉</span>`:(d===0?`<span class="tag green">予定どおり ◎</span>`:`<span class="tag red">予定より ${-d} ブロック遅れ</span>`);
+  let h=`<div class="card"><div class="spread"><h2><span class="ic">📖</span>英語：Power On 教科書マスター</h2>${tag}</div>
+    <div class="bar" style="margin:8px 0 6px"><i class="${cleared>=total?'g':''}" style="width:${total?Math.round(cleared/total*100):0}%"></i></div>
+    <div class="muted">${cleared} / ${total} ブロック クリア ｜ 今日の目標ペース：${exp}ブロック</div>
+    <div class="row" style="margin-top:8px"><span class="muted">完了目標日：</span>
+    <input type="date" value="${S.learnDL}" onchange="setLearnDL(this.value)">
+    <span class="muted">テストで100点を取るとクリア。間違えても解説を読んで何度でも再挑戦！</span></div>
+    <div class="row" style="margin-top:8px"><button class="mini" onclick="openMistakes()">📒 間違いノート（${Object.keys(S.mistakes).length}問）</button></div></div>`;
+  h+=`<div class="card"><h2><span class="ic">🧩</span>ブロック一覧</h2>`;
+  let last="";
+  for(const b of QB){
+    if(b.ls!==last){ h+=`<div class="lsname">${esc(b.ls)}</div>`; last=b.ls; }
+    const e=S.learn[b.id]||{}; const ready=b.qs.length>0;
+    let st;
+    if(!ready) st=`<span class="tag">問題準備中</span>`;
+    else if(e.cleared) st=`<span class="tag green">クリア ✓ ${e.date?fmtMD(e.date):""}</span>`;
+    else if(e.tries) st=`<span class="tag amber">挑戦${e.tries}回・最高${e.best||0}点</span>`;
+    else st=`<span class="tag" style="background:#eef2f6;color:#5b6b7c">未挑戦</span>`;
+    h+=`<div class="blockrow"><div class="info" style="flex:1"><b style="font-size:13.5px">${esc(b.nm)}</b> ${st}</div>
+      ${ready?`<button class="mini ${e.cleared?'':'primary'}" onclick="openBlock('${b.id}')">${e.cleared?'復習':'開く'}</button>`:""}</div>`;
+  }
+  h+=`<div class="muted" style="margin-top:8px">Pre-Lesson〜Lesson 10まで教科書全範囲を収録済み。全ブロック100点クリアを目指そう！</div></div>`;
+  V.innerHTML=h;
+}
+function openBlock(id){ LV={mode:"block",bid:id,order:[],i:0,wrong:[],ok:0,fb:null,perms:{}}; render(); }
+function backLearn(){ LV.mode="dash"; render(); }
+function setLearnDL(v){ S.learnDL=v; save(); render(); }
+function rBlockView(){ const b=blockById(LV.bid); const e=S.learn[b.id]||{};
+  let h=`<div class="card"><div class="spread"><h2><span class="ic">🧩</span>${esc(b.ls)}｜${esc(b.nm)}</h2>
+    <button class="mini" onclick="backLearn()">← 一覧へ</button></div>`;
+  if(b.pts&&b.pts.length){ h+=`<div class="muted" style="margin:6px 0 4px">まずここを確認 👇</div><div class="ptlist">`+
+    b.pts.map(t=>esc(t)).join("<br>")+`</div>`; }
+  h+=`<div class="row" style="margin-top:12px">
+    <button class="primary" onclick="startQuiz('${b.id}')">✏️ テスト開始（全${b.qs.length}問・100点でクリア）</button>
+    ${e.tries?`<span class="muted">これまで：挑戦${e.tries}回 ／ 最高${e.best||0}点${e.cleared?' ／ クリア済み✓':''}</span>`:""}</div></div>`;
+  V.innerHTML=h;
+}
+function startQuiz(bid){ const b=blockById(bid);
+  LV={mode:"quiz",bid,order:shuffle([...b.qs.keys()]),i:0,wrong:[],ok:0,fb:null,perms:{}};
+  b.qs.forEach((q,qi)=>{ if(q.c) LV.perms[qi]=shuffle([...q.c.keys()]); });
+  render(); }
+function curQ(){ const b=blockById(LV.bid); return b.qs[LV.order[LV.i]]; }
+function rQuiz(){ const b=blockById(LV.bid); const N=b.qs.length; const q=curQ(); const qi=LV.order[LV.i];
+  let h=`<div class="card"><div class="spread"><div class="qprog">${esc(b.nm)}テスト　問 ${LV.i+1} / ${N}　（正解 ${LV.ok}）</div>
+    <button class="mini" onclick="backLearn()">中断</button></div>
+    <div class="bar" style="margin-bottom:10px"><i style="width:${Math.round(LV.i/N*100)}%"></i></div>
+    <div class="qtext">${esc(q.q)}</div>`;
+  if(LV.fb){ const f=LV.fb; const o=curOrigin(); const dx=dxOf(o.bid,o.qi);
+    h+=`<div class="fbpanel ${f.ok?'ok':'ng'}">${f.ok?'⭕ 正解！':'❌ 不正解…'}<br>
+      <b>正解：${esc(f.ans)}</b><br><span style="font-size:13px">${esc(q.ex||"")}</span>
+      ${dx?`<details class="dxbox"><summary>🔍 さらに詳しく</summary><div class="dxbody">${esc(dx)}</div></details>`:""}</div>
+      <button class="primary" onclick="nextQ()">${LV.i+1>=N?'結果を見る':'次の問題へ'} ▶</button>`;
+  } else if(q.c){ const pm=LV.perms[qi]||[...q.c.keys()];
+    for(const oi of pm){ h+=`<button class="choice" onclick="ansMC(${oi})">${esc(q.c[oi])}</button>`; }
+  } else {
+    h+=`<div class="row"><input id="qin" style="flex:1;min-width:180px" placeholder="答えを入力" autocomplete="off"
+      onkeydown="if(event.key==='Enter')submitIN()"><button class="primary" onclick="submitIN()">答える</button></div>`;
+  }
+  h+=`</div>`; V.innerHTML=h;
+  const inp=document.getElementById("qin"); if(inp) inp.focus();
+}
+function ansMC(oi){ const q=curQ(); const ok=oi===q.a;
+  if(ok)LV.ok++; else LV.wrong.push(LV.order[LV.i]);
+  recMistake(ok);
+  LV.fb={ok,ans:q.c[q.a]}; render(); }
+function submitIN(){ const q=curQ(); const v=(document.getElementById("qin").value||"").trim().toLowerCase();
+  if(!v) return;
+  const ok=q.a.some(a=>a.toLowerCase()===v);
+  if(ok)LV.ok++; else LV.wrong.push(LV.order[LV.i]);
+  recMistake(ok);
+  LV.fb={ok,ans:q.a[0]}; render(); }
+function nextQ(){ LV.fb=null; LV.i++;
+  const b=blockById(LV.bid);
+  if(LV.i>=b.qs.length){ const score=Math.round(LV.ok/b.qs.length*100);
+    if(LV.bid!=="_MN"){ learnGuard(); const e=S.learn[LV.bid]||(S.learn[LV.bid]={tries:0,best:0});
+      e.tries=(e.tries||0)+1; e.best=Math.max(e.best||0,score);
+      if(score===100){ e.cleared=true; e.date=todayStr(); }
+      save(); }
+    LV.mode="result"; LV.score=score; }
+  render(); }
+function rResult(){ const b=blockById(LV.bid); const score=LV.score; const isMN=LV.bid==="_MN";
+  const dxFor=(qi)=>{ const o=isMN?LV.map[qi]:{bid:LV.bid,qi}; return dxOf(o.bid,o.qi); };
+  const remain=Object.keys(S.mistakes||{}).length;
+  let h=`<div class="card" style="text-align:center">`;
+  if(score===100){ h+=`<div style="font-size:46px;margin:8px 0">🎉</div>
+    <div class="big" style="color:var(--green)">${isMN?'全問正解！':'100点！ブロッククリア！'}</div>
+    <div class="muted" style="margin:8px 0 14px">${isMN?`正解した問題は間違いノートから消えました（残り${remain}問）。`:`「${esc(b.ls)}｜${esc(b.nm)}」を完全マスター。この調子！`}</div>
+    ${isMN?`<button class="primary" onclick="openMistakes()">間違いノートへ</button> `:""}
+    <button class="${isMN?'mini':'primary'}" onclick="backLearn()">一覧へ戻る</button>`;
+  } else { h+=`<div style="font-size:40px;margin:8px 0">💪</div>
+    <div class="big">${score}点 — あと一歩！</div>
+    <div class="muted" style="margin:6px 0 10px">${isMN?`正解できた問題はノートから消えました（残り${remain}問）。間違えた問題は下で復習しよう。`:'クリアには100点が必要。下の解説を読んでから、もう一度挑戦しよう。'}</div>`;
+    h+=`</div><div class="card"><h2><span class="ic">📝</span>間違えた問題の復習</h2>`;
+    for(const qi of LV.wrong){ const q=b.qs[qi]; const dx=dxFor(qi);
+      h+=`<div class="fbpanel ng" style="margin:8px 0"><b>${esc(q.q)}</b><br>
+        正解：<b>${esc(q.c?q.c[q.a]:q.a[0])}</b><br><span style="font-size:13px">${esc(q.ex||"")}</span>
+        ${dx?`<details class="dxbox"><summary>🔍 さらに詳しく</summary><div class="dxbody">${esc(dx)}</div></details>`:""}</div>`; }
+    h+=`<div class="row" style="margin-top:10px">
+      ${isMN?`<button class="primary" onclick="startMNQuiz()">🔁 残りの間違いだけ再テスト</button>
+      <button class="mini" onclick="openMistakes()">ノートに戻る</button>`
+      :`<button class="primary" onclick="startQuiz('${b.id}')">🔁 もう一度挑戦（順番シャッフル）</button>
+      <button class="mini" onclick="openBlock('${b.id}')">要点を見直す</button>`}
+      <button class="mini" onclick="backLearn()">一覧へ</button></div>`;
+  }
+  h+=`</div>`; V.innerHTML=h;
+}
+/* ----- 間違いノート ----- */
+function mnItems(){ learnGuard();
+  return Object.keys(S.mistakes).map(k=>{ const i=k.lastIndexOf("|"); const bid=k.slice(0,i), qi=+k.slice(i+1);
+    const b=QB.find(x=>x.id===bid); if(!b||!b.qs[qi]) return null;
+    return {k,bid,qi,b,q:b.qs[qi],m:S.mistakes[k]}; }).filter(Boolean); }
+function openMistakes(){ learnGuard(); LV={mode:"mn",bid:null,order:[],i:0,wrong:[],ok:0,fb:null,perms:{},map:null}; TAB="learn"; render(); }
+function removeMistake(k){ learnGuard(); delete S.mistakes[k]; save(); render(); }
+function rMistakes(){ const items=mnItems();
+  let h=`<div class="card"><div class="spread"><h2><span class="ic">📒</span>間違いノート（${items.length}問）</h2>
+    <button class="mini" onclick="backLearn()">← 学習へ</button></div>
+    <div class="muted">これまでに間違えた問題の記録です。「覚えた！」で消すか、「間違いだけテスト」で正解すると自動で消えます。</div>
+    ${items.length?`<div class="row" style="margin-top:10px"><button class="primary" onclick="startMNQuiz()">🔁 間違いだけテスト（${items.length}問）</button></div>`:""}</div>`;
+  if(!items.length){ h+=`<div class="card" style="text-align:center"><div style="font-size:42px;margin:6px 0">🌟</div>
+    <div class="big">間違いノートは空です</div><div class="muted" style="margin-top:6px">苦手ゼロの状態。この調子！</div></div>`; }
+  else { h+=`<div class="card">`;
+    let last="";
+    for(const it of items){ const lbl=it.b.ls+"｜"+it.b.nm;
+      if(lbl!==last){ h+=`<div class="lsname">${esc(lbl)}</div>`; last=lbl; }
+      const dx=dxOf(it.bid,it.qi);
+      h+=`<div class="mnitem"><b style="font-size:13.5px">${esc(it.q.q)}</b><br>
+        <span style="font-size:13px">正解：<b>${esc(it.q.c?it.q.c[it.q.a]:it.q.a[0])}</b></span><br>
+        <span style="font-size:12.5px;color:var(--sub)">${esc(it.q.ex||"")}</span>
+        ${dx?`<details class="dxbox"><summary>🔍 さらに詳しく</summary><div class="dxbody">${esc(dx)}</div></details>`:""}
+        <div class="spread" style="margin-top:6px"><span class="muted">間違えた回数：${it.m.n}回${it.m.d?`（最終 ${fmtMD(it.m.d)}）`:""}</span>
+        <button class="mini" onclick="removeMistake('${it.k}')">覚えた！消す</button></div></div>`; }
+    h+=`</div>`; }
+  V.innerHTML=h; }
+function startMNQuiz(){ const items=mnItems(); if(!items.length) return;
+  VBQ={id:"_MN",ls:"間違いノート",nm:"間違いだけテスト",qs:items.map(it=>it.q)};
+  LV={mode:"quiz",bid:"_MN",order:shuffle([...VBQ.qs.keys()]),i:0,wrong:[],ok:0,fb:null,perms:{},map:items.map(it=>({bid:it.bid,qi:it.qi}))};
+  VBQ.qs.forEach((q,qi)=>{ if(q.c) LV.perms[qi]=shuffle([...q.c.keys()]); });
+  render(); }
+/* ===== リスニング暗記モジュール（Power On L1〜L10） ===== */
+const LSW={
+"Lesson 1":[["sightseeing","観光"],["countless","数えきれないほどの"],["construction","建設"],["donor","寄進者、寄付する人"],["exotic","異国情緒のある"],["appeal","心を引きつける"],["mecca","聖地、活動の中心地"],["nowadays","近頃は"],["seek","〜を求める"],["pride","誇り"],["experience","経験、〜を経験する"],["abroad","外国で、外国へ"],["tourism","観光業"],["shrine","神社"],["foreign","外国の"],["visitor","訪問者"]],
+"Lesson 2":[["distract","注意をそらす"],["predator","捕食者"],["attract","〜を引きつける"],["mate","つがいの相手、仲間"],["century","世紀"],["purpose","目的"],["flash","ぱっと光る"],["firefly","ホタル"],["squid","イカ"],["jellyfish","クラゲ"],["protein","タンパク質"],["appear","現れる、登場する"],["creature","生き物"],["scientist","科学者"],["develop","〜を開発する"],["method","方法"]],
+"Lesson 3":[["muscle","筋肉"],["height","身長、高さ"],["swing","スイング、振ること"],["congratulate","〜を祝う"],["pretend","〜のふりをする"],["dumbbell","ダンベル"],["donate","〜を寄付する"],["achieve","〜を達成する"],["modest","謙虚な"],["ability","能力"],["amaze","〜を驚かせる"],["realize","〜を実現する、悟る"],["professional","プロの"],["teammate","チームメイト"],["performance","パフォーマンス、演技"],["childhood","子ども時代"]],
+"Lesson 4":[["miniature","ミニチュアの"],["pastime","趣味、気晴らし"],["express","〜を表現する"],["concept","概念、考え方"],["ordinary","普通の"],["object","物、物体"],["traditional","伝統的な"],["pebble","小石"],["combine","〜を組み合わせる"],["display","〜を展示する"],["interpret","〜を解釈する"],["pursue","〜を追求する"],["create","〜を創作する"],["completely","完全に"],["work","作品、仕事"],["figure","人形、像"]],
+"Lesson 5":[["fiber","繊維"],["stem","茎"],["harvest","〜を収穫する"],["poverty","貧困"],["illegal","違法な"],["technique","技術"],["sustainable","持続可能な"],["resource","資源"],["enormous","巨大な"],["familiar","よく知られた"],["certificate","証明書"],["herb","草、草本植物"],["village","村"],["education","教育"],["hunt","〜を狩る"],["wild","野生の"]],
+"Lesson 6":[["behavior","行動"],["experiment","実験"],["researcher","研究者"],["wallet","財布"],["drop","〜を落とす"],["item","品物"],["percentage","割合"],["rate","割合、率"],["natural","当然の、自然な"],["certain","確信して、確実な"],["wrap","〜を包む"],["average","平均"],["participant","参加者"],["hesitate","ためらう"],["unnecessary","不必要な"],["purchase","〜を購入する"]],
+"Lesson 7":[["whale","クジラ"],["stomach","胃"],["victim","犠牲者"],["tragedy","悲劇"],["occur","起こる"],["waste","廃棄物"],["microplastic","マイクロプラスチック"],["millimeter","ミリメートル"],["consume","〜を消費する、食べる"],["decompose","分解される"],["organization","組織"],["collect","〜を集める"],["float","浮く"],["inventor","発明家"],["reduce","〜を減らす"],["reuse","〜を再利用する"]],
+"Lesson 8":[["cod","タラ"],["batter","揚げ物の衣"],["vinegar","酢"],["nutritious","栄養価の高い"],["separately","別々に"],["instant","即座の"],["serve","食事を出す"],["worker","労働者"],["pay","賃金"],["explore","〜を探検する"],["fisherman","漁師"],["shore","岸"],["sustainably","持続可能な方法で"],["introduce","〜を伝える、紹介する"],["dish","料理"],["hit","大ヒット、当たり"]],
+"Lesson 9":[["stare","じっと見つめる"],["shout","叫ぶ"],["venue","会場"],["tournament","大会"],["compete","競争する"],["worldwide","世界中で"],["popularity","人気"],["sharply","急激に"],["increase","増加する"],["scholarship","奨学金"],["obtain","〜を得る"],["concentration","集中力"],["teamwork","チームワーク"],["acknowledge","〜を認める"],["athlete","運動選手"],["government","政府"]],
+"Lesson 10":[["creator","創作する人"],["attention","注目"],["curved","曲線の"],["sustainability","持続可能性"],["awareness","意識"],["scrap","端切れ、くず"],["leather","革"],["overpopulation","過剰繁殖、人口過剰"],["landscape","風景"],["detour","回り道"],["contribute","貢献する"],["relearn","学び直す"],["shift","〜を移す"],["debut","デビューする"],["element","要素"],["costume","衣装"]]};
+const LSI={
+"Lesson 1":[["be famous for","〜で有名である","The shrine is famous for its red torii gates.","その神社は赤い鳥居で有名です。"],["one of the ...","〜のうちのひとつ","It is one of the most popular spots in Japan.","それは日本で最も人気のある場所のひとつです。"],["appeal to","〜の心を引きつける","The exotic view appeals to visitors from abroad.","その異国情緒ある眺めは海外からの観光客を引きつけます。"],["not only A but also B","AだけでなくBも","Tourists enjoy not only sightseeing but also sports.","観光客は観光だけでなくスポーツも楽しみます。"],["from all around the world","世界中から","People come from all around the world.","人々は世界中からやって来ます。"],["at that time","そのとき","I was skiing in Hokkaido at that time.","私はそのとき北海道でスキーをしていました。"]],
+"Lesson 2":[["turn on / turn off","〜をつける、〜を消す","Fireflies turn their lights on and off.","ホタルは光をつけたり消したりします。"],["look for","〜を探す","They look for mates.","彼らは相手を探します。"],["for centuries","何世紀もの間","They have appeared in poems for centuries.","それらは何世紀もの間、詩に登場してきました。"],["be used for","〜のために使われる","The light is used for different purposes.","その光はさまざまな目的のために使われます。"],["have been to","〜へ行ったことがある","Have you ever been to Toyama?","今までに富山へ行ったことがありますか。"],["in this way","このようにして","In this way, the light helps the creatures.","このようにして、光は生き物たちを助けます。"]],
+"Lesson 3":[["make up for","〜を補う","His muscles make up for his height.","彼の筋肉が身長の低さを補っています。"],["pretend to ...","〜するふりをする","He pretends to do muscle training.","彼は筋トレをするふりをします。"],["one at a time","一度にひとつずつ","Achieve one small goal at a time.","小さな目標を一度にひとつずつ達成しなさい。"],["lead A to B","AをBへ導く","Small goals will lead you to your big dream.","小さな目標があなたを大きな夢へ導きます。"],["come true","実現する","His dream came true.","彼の夢は実現しました。"],["in need","困っている","He helps children in need.","彼は困っている子どもたちを助けます。"]],
+"Lesson 4":[["see A as B","AをBとして見る","Mitate is seeing one thing as another.","見立てとは、あるものを別のものとして見ることです。"],["be made of","〜でできている","The garden is made of rocks and stones.","その庭園は岩と石でできています。"],["all over the world","世界中の、世界中で","He shares mitate with people all over the world.","彼は見立てを世界中の人々と共有しています。"],["next to","〜のとなりに","The broccoli next to the steak looked like a tree.","ステーキのとなりのブロッコリーは木のように見えました。"],["look like","〜のように見える","It looks like the moon.","それは月のように見えます。"],["for example","例えば","For example, he uses food and stationery.","例えば、彼は食べ物や文房具を使います。"]],
+"Lesson 5":[["be made from","〜から作られる","Banana paper is made from banana fibers.","バナナペーパーはバナナの繊維から作られます。"],["throw away","〜を捨てる","The stems are thrown away after the harvest.","茎は収穫の後に捨てられます。"],["turn A into B","AをBに変える","They turn the stems into fibers.","彼らは茎を繊維に変えます。"],["thanks to","〜のおかげで","Thanks to the project, life is better.","そのプロジェクトのおかげで、生活はより良くなっています。"],["such as","〜のような","They make products such as business cards and notebooks.","彼らは名刺やノートのような製品を作ります。"],["not A but B","AではなくB","Bananas grow not on trees but on enormous herbs.","バナナは木ではなく巨大な草に実ります。"]],
+"Lesson 6":[["tend to ...","〜しがちである","People tend to buy unnecessary food when they are hungry.","人は空腹のとき、不必要な食べ物を買いがちです。"],["on average","平均して","It took 24 days on average to finish the cookies.","クッキーを食べ終えるのに平均して24日かかりました。"],["on a diet","ダイエット中で","Which box is better when you are on a diet?","ダイエット中のとき、どちらの箱が良いでしょうか。"],["according to","〜によれば","According to one study, hungry shoppers buy more.","ある研究によれば、空腹の買い物客はより多く買います。"],["in order to ...","〜するために","What should be in your wallet in order to get it back?","財布を取り戻すためには、何が入っているべきでしょうか。"],["be likely to ...","〜しそうである","You are likely to purchase more food.","あなたはより多くの食べ物を購入しそうです。"]],
+"Lesson 7":[["mistake A for B","AをBと間違える","Sea turtles mistake plastic bags for jellyfish.","ウミガメはレジ袋をクラゲと間違えます。"],["break down into ...","分解されて〜になる","Plastic breaks down into smaller pieces.","プラスチックは分解されて、より小さな破片になります。"],["end up in ...","最終的に〜に行き着く","About eight million tons of plastic end up in the ocean every year.","毎年約800万トンのプラスチックが最終的に海に行き着きます。"],["in turn","今度は","Humans, in turn, consume these sea creatures.","今度は人間がこれらの海の生き物を食べます。"],["to make matters worse","さらに悪いことに","To make matters worse, plastic breaks down into microplastics.","さらに悪いことに、プラスチックは分解されてマイクロプラスチックになります。"],["take ... years to do","〜するのに…年かかる","It takes about 400 years for plastic bottles to decompose.","ペットボトルが分解されるには約400年かかります。"]],
+"Lesson 8":[["at the beginning of","〜の初めに","People started eating fried fish at the beginning of the 19th century.","19世紀の初めに、人々は揚げた魚を食べ始めました。"],["in the middle of","〜の半ばに","In the middle of the 19th century, someone served them together.","19世紀半ば、ある人がそれらを一緒に出しました。"],["by the end of","〜の終わりまでには","By the end of the 20th century, the cod had almost gone.","20世紀の終わりまでには、タラはほとんどいなくなっていました。"],["no longer","もはや〜ない","Fishermen can no longer find as many cod as before.","漁師たちはもはや以前ほど多くのタラを見つけられません。"],["a great number of","非常に多くの","They saw a great number of cod near the shore.","彼らは岸の近くで非常に多くのタラを見ました。"],["an instant hit","たちまち大人気","The new dish was an instant hit.","その新しい料理はたちまち大人気になりました。"]],
+"Lesson 9":[["regardless of","〜に関係なく","Students can enjoy esports regardless of their body strength.","生徒は体力に関係なくeスポーツを楽しめます。"],["in spite of","〜にもかかわらず","There are not many esports clubs in spite of its popularity.","人気にもかかわらず、eスポーツ部は多くありません。"],["a waste of time","時間の無駄","Some people are afraid that esports is a waste of time.","eスポーツは時間の無駄ではないかと心配する人もいます。"],["take part in","〜に参加する","I want to take part in the tournament.","私はその大会に参加したいです。"],["just before","〜の直前に","The IOC held an esports event just before the Tokyo Olympics.","IOCは東京オリンピックの直前にeスポーツのイベントを開きました。"],["the value of","〜の価値","They can learn the value of teamwork.","彼らはチームワークの価値を学ぶことができます。"]],
+"Lesson 10":[["at the age of","〜歳のときに","She went back to university at the age of 40.","彼女は40歳のときに大学に戻りました。"],["go back to","〜に戻る","She went back to university to study design.","彼女はデザインを学ぶために大学に戻りました。"],["brush up","〜を磨き直す","She brushed up her design skills.","彼女はデザインの技術を磨き直しました。"],["now and then","ときどき","It is all right to take detours now and then.","ときどき回り道をしてもいいのです。"],["contribute to","〜に貢献する","Designing is a way to contribute to the world.","デザインは世界に貢献するひとつの方法です。"],["shift A to B","AをBに移す","She shifted her focus to making things.","彼女は自分の関心をものづくりに移しました。"]]};
+const LSGR={
+"Lesson 1":[["現在形と過去形",[["Ms. Green visits Kyoto every year.","グリーン先生は毎年京都を訪れます。"],["I went to the shrine last month.","私は先月その神社へ行きました。"]]],["進行形",[["She is taking pictures now.","彼女は今、写真を撮っています。"],["I was skiing in Hokkaido at that time.","私はそのとき北海道でスキーをしていました。"]]],["one of ＋ 最上級",[["Kinkakuji is one of the most famous temples in Japan.","金閣寺は日本で最も有名な寺のひとつです。"]]]],
+"Lesson 2":[["受け身（be ＋ 過去分詞）",[["The light is used for different purposes.","その光はさまざまな目的のために使われます。"],["This song is loved by many people.","この歌は多くの人に愛されています。"]]],["現在完了・経験",[["Have you ever seen fireflies?","今までにホタルを見たことがありますか。"],["I have never been to Toyama.","私は一度も富山へ行ったことがありません。"]]],["現在完了・継続",[["I have known John since he was five.","私はジョンを彼が5歳のときから知っています。"],["They have been planning a trip since last March.","彼らはこの前の3月からずっと旅行を計画し続けています。"]]]],
+"Lesson 3":[["to不定詞・名詞的用法",[["I want to get a job in the future.","私は将来、仕事に就きたいです。"],["His dream was to be a major leaguer.","彼の夢はメジャーリーガーになることでした。"]]],["to不定詞・副詞的用法（目的）",[["I went to a baseball stadium to see a game.","私は試合を見るために野球場へ行きました。"]]],["to不定詞・形容詞的用法",[["His ability to hit balls amazes everyone.","ボールを打つ彼の能力はみんなを驚かせます。"],["I want something to drink.","私は何か飲み物がほしいです。"]]]],
+"Lesson 4":[["現在分詞の後置修飾",[["The boy standing over there is my brother.","あそこに立っている男の子は私の弟です。"]]],["過去分詞の後置修飾",[["There are many comic books translated into English.","英語に翻訳された漫画がたくさんあります。"]]],["比較級・最上級",[["This is the most interesting book of the three.","これは3冊の中で一番おもしろい本です。"],["My room is smaller than my sister's.","私の部屋は姉の部屋より小さいです。"]]]],
+"Lesson 5":[["関係代名詞・主格",[["I met the man who started the banana paper project.","私はバナナペーパープロジェクトを始めた男性に会いました。"],["This is a website which tells us about banana paper.","これはバナナペーパーについて教えてくれるウェブサイトです。"]]],["関係代名詞・目的格",[["Banana paper is not made from the part that you eat.","バナナペーパーはあなたが食べる部分からは作られていません。"]]],["seem to ...",[["Life in the village seems to be better.","村の生活はより良くなっているようです。"]]]],
+"Lesson 6":[["It is 形容詞 that ...",[["It is natural that we want to understand human behavior.","私たちが人間の行動を理解したいと思うのは当然です。"],["It is certain that you will find the answer.","あなたが答えを見つけるのは確実です。"]]],["S+V+C（look や feel など）",[["The cookies look delicious.","そのクッキーはおいしそうに見えます。"],["We felt tired after the experiment.","実験のあと、私たちは疲れを感じました。"]]],["S+V+O+C（make+O+C）",[["Buying unnecessary food will make you unhappy.","不必要な食べ物を買うことは、あなたを不幸にするでしょう。"],["The news made us happy.","その知らせは私たちを幸せにしました。"]]]],
+"Lesson 7":[["関係副詞 where",[["Sea animals are fighting to survive in the places where we find so much plastic waste.","海の動物たちは、私たちが大量のプラスチックごみを見つける場所で、生き残るために闘っています。"],["I want to visit the town where you were born.","私はあなたが生まれた町を訪れたいです。"]]],["関係副詞 when",[["The day when humans also become victims will soon come.","人間もまた犠牲者になる日が、すぐに来るでしょう。"]]],["関係代名詞 what",[["We need to think about what we can do to protect the oceans.","海を守るために何ができるかについて、考える必要があります。"],["What she said made everyone happy.","彼女が言ったことは、みんなを幸せにしました。"]]]],
+"Lesson 8":[["分詞構文",[["I waited for the bus, listening to my favorite songs.","私はお気に入りの歌を聞きながら、バスを待ちました。"]]],["関係代名詞の非制限用法",[["Every town had its fish-and-chip shop, which was often called a chippie.","どの町にもフィッシュ・アンド・チップスの店があり、それはしばしばチッピーと呼ばれました。"],["I have a sister, who lives in London.","私には姉がいて、彼女はロンドンに住んでいます。"]]],["過去完了形",[["By the end of the 20th century, the cod had almost gone.","20世紀の終わりまでには、タラはほとんどいなくなっていました。"],["The movie had already started when I arrived.","私が着いたとき、映画はすでに始まっていました。"]]]],
+"Lesson 9":[["知覚動詞 S+V+O+C",[["I saw a girl crying by a tree.","私は木のそばで泣いている女の子を見ました。"],["I heard someone call my name.","私はだれかが私の名前を呼ぶのを聞きました。"]]],["使役動詞 let / make",[["Some universities let esports players obtain scholarships.","一部の大学は、eスポーツ選手が奨学金を得られるようにしています。"],["This story made me think about my future.","この物語は、私に将来について考えさせました。"]]],["ask＋人＋if節",[["My friends asked me if I wanted to play esports.","友人たちは私に、eスポーツをやりたいかどうか尋ねました。"]]]],
+"Lesson 10":[["I wish＋仮定法過去",[["I wish I could make clothes with no waste at all.","まったく無駄のない服を作れたらいいのに。"]]],["仮定法過去",[["If I were rich, I would travel all over the world.","もし私がお金持ちなら、世界中を旅行するのに。"]]],["without＋仮定法",[["Without detours, I would not be designing now.","回り道がなかったら、私は今デザインをしていないでしょう。"]]]]};
+const LSLS=Object.keys(LSW);
+const LSMODES=[["w","単語"],["i","熟語"],["g","文法"]];
+let lsQueue=[], lsQi=0, lsPlaying=false, lsSession=0, lsWake=null, lsVoices=[];
+function lsGuard(){ if(!S.listen) S.listen={mode:"w",lessons:["Lesson 1"],pat:"EJE",rate:1.0,gap:1.2,shuffle:false,loop:true,skipKnown:false,known:{},pos:0}; }
+function lsLoadVoices(){ try{ lsVoices=speechSynthesis.getVoices(); }catch(e){} }
+if(typeof speechSynthesis!=="undefined"){ lsLoadVoices(); speechSynthesis.onvoiceschanged=lsLoadVoices; }
+function lsPick(lang,prefs){ const vs=lsVoices.filter(v=>v.lang&&v.lang.toLowerCase().startsWith(lang));
+  for(const p of prefs){ const v=vs.find(x=>x.name.includes(p)); if(v) return v; } return vs[0]||null; }
+function lsSpeak(text,lang){ return new Promise(res=>{ try{
+  const u=new SpeechSynthesisUtterance(text);
+  u.lang=lang==="en"?"en-US":"ja-JP";
+  const v=lang==="en"?lsPick("en",["Samantha","Karen","Daniel","Alex"]):lsPick("ja",["Kyoko","Otoya","O-Ren"]);
+  if(v) u.voice=v;
+  u.rate=S.listen.rate; u.onend=res; u.onerror=res;
+  speechSynthesis.speak(u); }catch(e){ res(); } }); }
+const lsWait=(s)=>new Promise(r=>setTimeout(r,s*1000));
+function lsKey(it){ return S.listen.mode+"|"+it.en; }
+function lsBuild(){ lsGuard();
+  const src=S.listen.mode==="w"?LSW:(S.listen.mode==="i"?LSI:LSGR);
+  let items=[];
+  for(const ls of LSLS){ if(!S.listen.lessons.includes(ls)) continue;
+    for(const e of (src[ls]||[])){
+      if(S.listen.mode==="g") items.push({ls,en:e[0],ja:"",pairs:e[1],gram:true});
+      else items.push({ls,en:e[0],ja:e[1],ex:e[2]||null,exJa:e[3]||null});
+    } }
+  if(S.listen.skipKnown) items=items.filter(it=>!S.listen.known[lsKey(it)]);
+  if(S.listen.shuffle) items=shuffle(items);
+  lsQueue=items; if(lsQi>=lsQueue.length) lsQi=0;
+}
+function lsEl(id){ return document.getElementById(id); }
+function lsSetNow(en,ja){ const a=lsEl("lsEn"),b=lsEl("lsJa"); if(a)a.textContent=en; if(b)b.textContent=ja; }
+function lsStatTxt(t){ const e=lsEl("lsStat"); if(e)e.textContent=t; }
+function lsCntTxt(){ const e=lsEl("lsCnt"); if(e)e.textContent=lsQueue.length?`${lsQi+1} / ${lsQueue.length}`:""; }
+async function lsPlayItem(it,sid){ const g=S.listen.gap, pat=S.listen.pat;
+  if(it.gram){
+    lsSetNow(it.en,"（文法ポイント）");
+    await lsSpeak(it.en,"ja"); if(sid!==lsSession)return; await lsWait(g*0.6);
+    for(const pr of it.pairs){ if(sid!==lsSession)return;
+      lsSetNow(pr[0],pr[1]);
+      await lsSpeak(pr[0],"en"); if(sid!==lsSession)return; await lsWait(g);
+      await lsSpeak(pr[1],"ja"); if(sid!==lsSession)return; await lsWait(g);
+      if(pat==="EJE"){ await lsSpeak(pr[0],"en"); if(sid!==lsSession)return; await lsWait(g*0.7); } }
+    return; }
+  if(pat==="JE"){
+    lsSetNow("？？？",it.ja);
+    await lsSpeak(it.ja,"ja"); if(sid!==lsSession)return;
+    await lsWait(Math.max(g,1.5)); if(sid!==lsSession)return;
+    lsSetNow(it.en,it.ja);
+    await lsSpeak(it.en,"en"); if(sid!==lsSession)return; await lsWait(g*0.5);
+    await lsSpeak(it.en,"en");
+  } else {
+    lsSetNow(it.en,"…");
+    await lsSpeak(it.en,"en"); if(sid!==lsSession)return; await lsWait(g);
+    lsSetNow(it.en,it.ja);
+    await lsSpeak(it.ja,"ja"); if(sid!==lsSession)return;
+    if(pat==="EJE"){ await lsWait(g*0.5); await lsSpeak(it.en,"en"); }
+  }
+  if(sid!==lsSession)return;
+  if(it.ex){ await lsWait(g*0.7); if(sid!==lsSession)return;
+    lsSetNow(it.en,it.ja+"\n📖 "+it.ex);
+    await lsSpeak(it.ex,"en"); if(sid!==lsSession)return; await lsWait(g*0.7);
+    if(it.exJa){ await lsSpeak(it.exJa,"ja"); } }
+}
+async function lsLoop(){ const sid=lsSession;
+  while(lsPlaying&&sid===lsSession){
+    if(!lsQueue.length){ lsStop(); lsSetNow("項目がありません","レッスンを選んでください"); return; }
+    if(lsQi>=lsQueue.length){ if(S.listen.loop){ lsQi=0; lsBuild(); } else { lsStop(); lsSetNow("おしまい！","おつかれさま 🎉"); return; } }
+    lsCntTxt();
+    await lsPlayItem(lsQueue[lsQi],sid);
+    if(sid!==lsSession) return;
+    await lsWait(S.listen.gap*0.8);
+    if(sid!==lsSession) return;
+    lsQi++; S.listen.pos=lsQi; save();
+  } }
+async function lsToggle(){ lsGuard();
+  if(lsPlaying){ lsStop(); return; }
+  lsBuild(); if(S.listen.pos<lsQueue.length) lsQi=S.listen.pos;
+  lsPlaying=true; lsSession++;
+  const pb=lsEl("lsPlayBtn"); if(pb)pb.textContent="⏸";
+  try{ if(navigator.wakeLock){ lsWake=await navigator.wakeLock.request("screen"); lsStatTxt("🔋 画面スリープ防止 ON"); } }catch(e){}
+  try{ speechSynthesis.cancel(); }catch(e){}
+  lsLoop(); }
+function lsStop(){ lsPlaying=false; lsSession++;
+  try{ speechSynthesis.cancel(); }catch(e){}
+  const pb=lsEl("lsPlayBtn"); if(pb)pb.textContent="▶"; lsStatTxt("");
+  if(lsWake){ lsWake.release().catch(()=>{}); lsWake=null; } }
+function lsPeek(){ if(lsQueue[lsQi]){ const it=lsQueue[lsQi]; lsSetNow(it.en,it.gram?"（文法ポイント）":it.ja); lsCntTxt(); } }
+function lsNext(){ if(!lsQueue.length) lsBuild();
+  lsQi=Math.min(lsQi+1,Math.max(0,lsQueue.length-1)); S.listen.pos=lsQi; save();
+  if(lsPlaying){ lsSession++; try{speechSynthesis.cancel();}catch(e){} lsLoop(); } else lsPeek(); }
+function lsPrev(){ lsQi=Math.max(0,lsQi-1); S.listen.pos=lsQi; save();
+  if(lsPlaying){ lsSession++; try{speechSynthesis.cancel();}catch(e){} lsLoop(); } else lsPeek(); }
+function lsMark(){ if(!lsQueue[lsQi]) return; const k=lsKey(lsQueue[lsQi]);
+  S.listen.known[k]=!S.listen.known[k]; save();
+  lsStatTxt(S.listen.known[k]?"⭐ 「覚えた」に登録しました":"登録を解除しました"); render(); }
+function lsTg(k){ lsGuard(); S.listen[k]=!S.listen[k]; save(); lsBuild(); render(); }
+function lsSetPat(v){ lsGuard(); S.listen.pat=v; save(); }
+function lsSetNum(k,v){ lsGuard(); S.listen[k]=parseFloat(v); save(); }
+function lsSetMode(m){ lsStop(); lsGuard(); S.listen.mode=m; S.listen.pos=0; lsQi=0; save(); lsBuild(); render(); }
+function lsTgLesson(l){ lsGuard(); const i=S.listen.lessons.indexOf(l);
+  if(i>=0){ if(S.listen.lessons.length>1) S.listen.lessons.splice(i,1); } else S.listen.lessons.push(l);
+  S.listen.pos=0; lsQi=0; save(); lsBuild(); render(); }
+function lsTgKnown(k){ lsGuard(); S.listen.known[k]=!S.listen.known[k]; save(); if(S.listen.skipKnown) lsBuild(); render(); }
+function rListen(){ lsGuard(); if(!lsQueue.length) lsBuild();
+  const L=S.listen;
+  let h=`<div class="ls-seg">`+LSMODES.map(m=>`<button class="${L.mode===m[0]?'act':''}" onclick="lsSetMode('${m[0]}')">${m[1]}</button>`).join("")+`</div>`;
+  h+=`<div class="card"><h2><span class="ic">📚</span>レッスン選択（複数可）</h2><div class="ls-chips">`+
+    LSLS.map(l=>`<button class="ls-chip ${L.lessons.includes(l)?'act':''}" onclick="lsTgLesson('${l}')">${l.replace("Lesson ","L")}</button>`).join("")+`</div></div>`;
+  const cur=lsQueue[lsQi];
+  h+=`<div class="card"><div class="ls-now">
+    <div class="en" id="lsEn">${cur?esc(cur.en):"準備OK"}</div>
+    <div class="ja" id="lsJa">${cur?(cur.gram?"（文法ポイント）":esc(cur.ja)):"▶ を押すと始まります"}</div>
+    <div class="cnt" id="lsCnt">${lsQueue.length?`${lsQi+1} / ${lsQueue.length}`:""}</div>
+    <div class="stat" id="lsStat"></div></div>
+    <div class="ls-transport">
+      <button class="ls-tbtn" onclick="lsPrev()">⏮</button>
+      <button class="ls-tbtn play" id="lsPlayBtn" onclick="lsToggle()">${lsPlaying?"⏸":"▶"}</button>
+      <button class="ls-tbtn" onclick="lsNext()">⏭</button></div>
+    <div class="ls-pills">
+      <button class="ls-pill ${L.shuffle?'on':''}" onclick="lsTg('shuffle')">🔀 シャッフル</button>
+      <button class="ls-pill ${L.loop?'on':''}" onclick="lsTg('loop')">🔁 ループ</button>
+      <button class="ls-pill ${L.skipKnown?'on':''}" onclick="lsTg('skipKnown')">✅ 覚えたを飛ばす</button>
+      <button class="ls-pill" onclick="lsMark()">⭐ この項目を覚えた</button></div></div>`;
+  h+=`<div class="card"><h2><span class="ic">⚙️</span>再生設定</h2>
+    <div class="ls-set"><label>読み上げ順</label>
+      <select onchange="lsSetPat(this.value)">
+        <option value="EJE" ${L.pat==="EJE"?"selected":""}>英 → 日 → 英（定着）</option>
+        <option value="EJ" ${L.pat==="EJ"?"selected":""}>英 → 日</option>
+        <option value="JE" ${L.pat==="JE"?"selected":""}>日 →（思い出す）→ 英</option></select></div>
+    <div class="ls-set"><label>速さ</label><input type="range" min="0.6" max="1.4" step="0.1" value="${L.rate}"
+      oninput="lsSetNum('rate',this.value);document.getElementById('lsVR').textContent='×'+(+this.value).toFixed(1)"><span class="val" id="lsVR">×${L.rate.toFixed(1)}</span></div>
+    <div class="ls-set"><label>間（ポーズ）</label><input type="range" min="0.4" max="3" step="0.2" value="${L.gap}"
+      oninput="lsSetNum('gap',this.value);document.getElementById('lsVG').textContent=(+this.value).toFixed(1)+'秒'"><span class="val" id="lsVG">${L.gap.toFixed(1)}秒</span></div>
+    <div class="muted">🔋 再生中は画面スリープを自動で防ぎます（対応端末）。画面を完全にロックすると音声は止まります。🚲 自転車に乗りながらの使用は禁止！家でのスキマ時間に。</div></div>`;
+  const src=L.mode==="w"?LSW:(L.mode==="i"?LSI:LSGR);
+  h+=`<div class="card"><h2><span class="ic">📃</span>リスト（☆＝覚えた）</h2>`;
+  for(const ls of LSLS){ if(!L.lessons.includes(ls)) continue;
+    for(const e of (src[ls]||[])){
+      const en=e[0]; const ja=L.mode==="g"?e[1].map(p=>p[0]).join(" / "):e[1];
+      const k=L.mode+"|"+en; const kn=!!L.known[k];
+      h+=`<div class="ls-item ${kn?'known':''}"><div style="flex:1;min-width:0"><span class="en">${esc(en)}</span><br><span class="ja">${esc(ja)}</span></div>
+        <button class="ls-kbtn" onclick="lsTgKnown('${k.replace(/'/g,"\\'")}')">${kn?"⭐":"☆"}</button></div>`; } }
+  h+=`</div>`;
+  V.innerHTML=h;
+}
+/* ----- 週間 ----- */
+function rWeek(){
+  const t=todayStr(); const mon=mondayOf(t); const wi=weekInfo(mon);
+  let cells="";
+  for(let i=0;i<7;i++){ const ds=addD(mon,i); const lg=peekLog(ds);
+    const future=ds>t; const pre=ds<S.settings.startDate;
+    const cls= future?"":(pre||dayPassed(ds)?"ok":(lg.min>0||ds<t?"ng":"ng"));
+    cells+=`<div class="wd ${future?'':cls} ${ds===t?'today':''}"><div>${WD[i]}</div><div class="d">${P(ds).getDate()}</div><div class="m">${future?'−':(pre?'—':lg.min+'分')}</div><div>${future?'':(pre?'':(dayPassed(ds)?'✓':'✗'))}</div></div>`;
+  }
+  const weeks=ledgerWeeks();
+  let earned=0,paid=0,rows="";
+  for(const m of weeks.slice().reverse()){
+    const wi2=weekInfo(m); const wk=S.weeks[m]||(S.weeks[m]={paid:false});
+    const amt=wi2.passed?S.settings.allowance:0;
+    if(wi2.passed){ earned+=S.settings.allowance; if(wk.paid) paid+=S.settings.allowance; }
+    rows+=`<tr><td>${fmtMD(m)}〜${fmtMD(addD(m,6))}</td><td>${wi2.passDays}/7日</td>
+      <td><span class="tag ${wi2.passed?'green':'red'}">${wi2.passed?'合格 🎉':'不合格'}</span></td>
+      <td class="money">${wi2.passed?'¥'+S.settings.allowance.toLocaleString():'—'}</td>
+      <td>${wi2.passed?`<input type="checkbox" ${wk.paid?'checked':''} onchange="togglePaid('${m}',this.checked)">`:''}</td></tr>`;
+  }
+  const unpaid=earned-paid;
+  V.innerHTML=`
+  <div class="kpis">
+    <div class="kpi"><div class="v">¥${earned.toLocaleString()}</div><div class="l">累計獲得</div></div>
+    <div class="kpi"><div class="v">¥${paid.toLocaleString()}</div><div class="l">渡し済み</div></div>
+    <div class="kpi"><div class="v" style="color:${unpaid>0?'var(--amber)':'var(--ink)'}">¥${unpaid.toLocaleString()}</div><div class="l">未渡し</div></div>
+  </div>
+  <div class="card"><div class="spread"><h2><span class="ic">📅</span>今週（${fmtMD(mon)}〜${fmtMD(addD(mon,6))}）</h2>
+    <span class="tag ${wi.passDays>=S.settings.weeklyPassDays?'green':'amber'}">${wi.passDays}/${S.settings.weeklyPassDays}日 達成</span></div>
+    <div class="weekgrid" style="margin-top:8px">${cells}</div>
+    <div class="muted" style="margin-top:8px">週${S.settings.weeklyPassDays}日以上の達成（1日最低${S.settings.dailyMin}分）で合格 → 小遣い ¥${S.settings.allowance.toLocaleString()}</div></div>
+  <div class="card"><h2><span class="ic">💰</span>週ごとの結果と小遣い</h2>
+    ${rows?`<table class="ledger"><tr><th>週</th><th>達成</th><th>判定</th><th>小遣い</th><th>渡した</th></tr>${rows}</table>`:`<div class="muted">まだ完了した週がありません。今週から記録を始めましょう。</div>`}
+  </div>`;
+}
+function togglePaid(m,v){ (S.weeks[m]||(S.weeks[m]={})).paid=v; save(); render(); }
+/* ----- カレンダー ----- */
+function rCal(){
+  const t=todayStr();
+  if(calY===undefined){ calY=P(t).getFullYear(); calM=P(t).getMonth(); }
+  const first=new Date(calY,calM,1); const start=(first.getDay()+6)%7; const days=new Date(calY,calM+1,0).getDate();
+  const examDates=new Set(S.exams.map(e=>e.date));
+  let cells=WD.map(w=>`<div class="h">${w}</div>`).join("");
+  for(let i=0;i<start;i++) cells+=`<div></div>`;
+  let okc=0, ngc=0;
+  for(let d=1; d<=days; d++){
+    const ds=iso(new Date(calY,calM,d));
+    let cls="", mk="";
+    if(ds>=S.settings.startDate && ds<=t){
+      if(dayPassed(ds)){cls="ok"; mk="✓"; okc++;} else {cls="ng"; mk="✗"; ngc++;}
+    } else if(ds<S.settings.startDate||ds>t){ cls="off"; }
+    if(examDates.has(ds)){ cls+=" exam"; mk="📝"+mk; }
+    cells+=`<div class="c ${cls}"><div class="n">${d}</div><div class="mk">${mk}</div></div>`;
+  }
+  V.innerHTML=`<div class="card">
+    <div class="spread"><button class="mini" onclick="calNav(-1)">←</button>
+      <h2 style="margin:0">${calY}年 ${calM+1}月</h2>
+      <button class="mini" onclick="calNav(1)">→</button></div>
+    <div class="cal" style="margin-top:10px">${cells}</div>
+    <div class="muted" style="margin-top:8px">✓ 達成（${okc}日）　✗ 未達成（${ngc}日）　📝 試験日</div></div>`;
+}
+function calNav(n){ calM+=n; if(calM<0){calM=11;calY--;} if(calM>11){calM=0;calY++;} render(); }
+/* ----- 計画 ----- */
+function rPlan(){
+  const t=todayStr();
+  let h=`<div class="card"><h2><span class="ic">📝</span>定期テスト</h2>`;
+  for(const ex of S.exams){
+    const dl=diffD(t,ex.date);
+    h+=`<div class="examcard"><div class="spread"><h3>${esc(ex.name)}</h3>
+      <span class="tag ${dl<0?'':'amber'}">${dl<0?'終了':'D-'+dl}（${fmtMD(ex.date)}）</span></div>`;
+    for(const r of ex.ranges){
+      const pct=r.total?Math.round(r.done/r.total*100):0;
+      h+=`<div class="range"><div class="spread"><b>${esc(r.subject)}</b><span class="muted">${r.done} / ${r.total} ${esc(r.unit)}（${pct}%）</span></div>
+        <div class="muted">${esc(r.desc)}</div>
+        <div class="bar" style="margin-top:5px"><i class="${pct>=100?'g':''}" style="width:${pct}%"></i></div>
+        <div class="row" style="margin-top:6px">
+          <button class="mini" onclick="editRangeDone('${ex.id}','${r.id}')">進捗を修正</button>
+          <button class="mini danger" onclick="delRange('${ex.id}','${r.id}')">範囲を削除</button></div></div>`;
+    }
+    h+=`<div class="fieldset"><div class="lbl">範囲を追加（教科 / 内容 / 量 / 単位）</div>
+      <div class="row"><input id="rs_${ex.id}" placeholder="教科（例：英語）" style="width:110px">
+        <input id="rd_${ex.id}" placeholder="内容（例：教科書p28〜75）" style="flex:1;min-width:160px"></div>
+      <div class="row" style="margin-top:6px"><input id="rt_${ex.id}" type="number" placeholder="量" min="1">
+        <input id="ru_${ex.id}" placeholder="単位（例：ページ）" style="width:110px">
+        <button class="mini primary" onclick="addRange('${ex.id}')">追加</button></div></div>
+    <div class="row" style="margin-top:8px">
+      <button class="mini" onclick="editExam('${ex.id}')">名前・日付を変更</button>
+      <button class="mini danger" onclick="delExam('${ex.id}')">この試験を削除</button></div></div>`;
+  }
+  h+=`<div class="fieldset"><div class="lbl">試験を追加</div>
+    <div class="row"><input id="exName" placeholder="試験名（例：2学期中間テスト）" style="flex:1;min-width:160px">
+      <input id="exDate" type="date"><button class="mini primary" onclick="addExam()">追加</button></div></div></div>`;
+  h+=`<div class="card"><h2><span class="ic">🎓</span>大学受験 毎日ルーチン</h2>
+    <div class="muted" style="margin-bottom:6px">塾なし・偏差値60私大を見据えた基礎固め。毎日コツコツ型の課題を登録します。</div>`;
+  for(const ro of S.routines){
+    h+=`<div class="task"><div class="info"><div class="name">${esc(ro.name)}</div>
+      <div class="meta">1日 ${ro.quota}${esc(ro.unit)} ・ ${ro.active?'有効':'停止中'}</div></div>
+      <div class="row"><button class="mini" onclick="toggleRoutine('${ro.id}')">${ro.active?'停止':'再開'}</button>
+      <button class="mini danger" onclick="delRoutine('${ro.id}')">削除</button></div></div>`;
+  }
+  h+=`<div class="fieldset"><div class="lbl">ルーチンを追加（名前 / 1日の量 / 単位）</div>
+    <div class="row"><input id="roName" placeholder="例：古文単語" style="flex:1;min-width:140px">
+      <input id="roQuota" type="number" min="1" placeholder="量"><input id="roUnit" placeholder="単位" style="width:90px">
+      <button class="mini primary" onclick="addRoutine()">追加</button></div></div></div>`;
+  V.innerHTML=h;
+}
+const uid=()=>Math.random().toString(36).slice(2,9);
+function addExam(){ const n=document.getElementById("exName").value.trim(); const d=document.getElementById("exDate").value;
+  if(!n||!d) return alert("試験名と日付を入力してください"); S.exams.push({id:uid(),name:n,date:d,ranges:[]}); save(); render(); }
+function editExam(id){ const ex=S.exams.find(e=>e.id===id); const n=prompt("試験名",ex.name); if(n===null)return;
+  const d=prompt("日付（YYYY-MM-DD）",ex.date); if(d===null)return;
+  if(n.trim())ex.name=n.trim(); if(/^\d{4}-\d{2}-\d{2}$/.test(d))ex.date=d; save(); render(); }
+function delExam(id){ if(confirm("この試験を削除しますか？")){ S.exams=S.exams.filter(e=>e.id!==id); save(); render(); } }
+function addRange(exId){ const ex=S.exams.find(e=>e.id===exId);
+  const s=document.getElementById("rs_"+exId).value.trim(), d=document.getElementById("rd_"+exId).value.trim(),
+        t=parseInt(document.getElementById("rt_"+exId).value), u=document.getElementById("ru_"+exId).value.trim()||"ページ";
+  if(!s||!d||!t) return alert("教科・内容・量を入力してください");
+  ex.ranges.push({id:uid(),subject:s,desc:d,total:t,done:0,unit:u}); save(); render(); }
+function delRange(exId,rId){ const ex=S.exams.find(e=>e.id===exId); ex.ranges=ex.ranges.filter(r=>r.id!==rId); save(); render(); }
+function editRangeDone(exId,rId){ const ex=S.exams.find(e=>e.id===exId); const r=ex.ranges.find(x=>x.id===rId);
+  const v=prompt(`完了した量（全${r.total}${r.unit}中）`,r.done); if(v===null)return;
+  const n=parseInt(v); if(!isNaN(n)) r.done=Math.max(0,Math.min(r.total,n)); save(); render(); }
+function addRoutine(){ const n=document.getElementById("roName").value.trim(), q=parseInt(document.getElementById("roQuota").value),
+  u=document.getElementById("roUnit").value.trim()||"回";
+  if(!n||!q) return alert("名前と量を入力してください");
+  S.routines.push({id:uid(),name:n,quota:q,unit:u,active:true}); save(); render(); }
+function toggleRoutine(id){ const r=S.routines.find(x=>x.id===id); r.active=!r.active; save(); render(); }
+function delRoutine(id){ if(confirm("削除しますか？")){ S.routines=S.routines.filter(x=>x.id!==id); save(); render(); } }
+/* ----- 設定 ----- */
+function rSet(){
+  const s=S.settings;
+  V.innerHTML=`<div class="card"><h2><span class="ic">⚙️</span>ルール設定</h2>
+    <div class="lbl muted">1日の最低勉強時間</div>
+    <select onchange="S.settings.dailyMin=parseInt(this.value);save();render()">
+      ${[30,45,60,90,120].map(v=>`<option value="${v}" ${s.dailyMin===v?'selected':''}>${v}分</option>`).join("")}</select>
+    <div class="lbl muted" style="margin-top:10px">週の合格に必要な達成日数</div>
+    <select onchange="S.settings.weeklyPassDays=parseInt(this.value);save();render()">
+      ${[5,6,7].map(v=>`<option value="${v}" ${s.weeklyPassDays===v?'selected':''}>${v}日以上</option>`).join("")}</select>
+    <div class="lbl muted" style="margin-top:10px">週合格の小遣い（円）</div>
+    <input type="number" value="${s.allowance}" min="0" step="100" onchange="S.settings.allowance=parseInt(this.value)||0;save();render()">
+    <div class="lbl muted" style="margin-top:10px">記録開始日</div>
+    <input type="date" value="${s.startDate}" onchange="S.settings.startDate=this.value;save();render()">
+    <div class="lbl muted" style="margin-top:10px">学年末の日付</div>
+    <input type="date" value="${s.termEnd}" onchange="S.settings.termEnd=this.value;save();render()">
+  </div>
+  <div class="card"><h2><span class="ic">💾</span>データ管理</h2>
+    <div class="muted" style="margin-bottom:8px">記録はこの端末のブラウザ内に保存されます。スマホ⇄PC間で引き継ぐときは書き出し→読み込みを使ってください。</div>
+    <div class="row">
+      <button onclick="expData()">📤 書き出し（バックアップ）</button>
+      <label><input type="file" accept=".json" style="display:none" onchange="impData(this)"><button onclick="this.previousElementSibling.click()" style="display:none"></button><button class="mini" onclick="this.parentElement.querySelector('input').click()">📥 読み込み</button></label>
+      <button class="danger mini" onclick="resetAll()">全データ初期化</button>
+    </div></div>
+  <div class="card"><h2><span class="ic">ℹ️</span>使い方</h2>
+    <div class="muted">
+    ① 「計画」で試験日と範囲（量）を登録 → 毎日のノルマが自動計算されます（遅れた分は残り日数で自動再配分）。<br>
+    ② 毎日「今日」タブで勉強時間とノルマの進捗を記録（${s.dailyMin}分以上で達成✓）。<br>
+    ③ 「週間」タブで週${s.weeklyPassDays}日以上達成なら合格🎉 → 小遣い¥${s.allowance.toLocaleString()}。渡したらチェック。<br>
+    ④ 大学受験対策は「毎日ルーチン」で基礎固めを継続します。</div></div>`;
+}
+function expData(){ const b=new Blob([JSON.stringify(S,null,1)],{type:"application/json"});
+  const a=document.createElement("a"); a.href=URL.createObjectURL(b); a.download="学習記録_"+todayStr().replaceAll("-","")+".json"; a.click(); }
+function impData(inp){ const f=inp.files[0]; if(!f)return; const rd=new FileReader();
+  rd.onload=()=>{ try{ const j=JSON.parse(rd.result); if(!j.settings) throw 0; S=j; save(); alert("読み込みました"); render(); }catch(e){ alert("ファイルを読み込めませんでした"); } };
+  rd.readAsText(f); }
+function resetAll(){ if(confirm("本当に全データを消しますか？"))if(confirm("元に戻せません。よろしいですか？")){ localStorage.removeItem(KEY); S=load(); render(); } }
+/* ---------- 起動 ---------- */
+window.go=go; window.addMin=addMin; window.setTarget=setTarget; window.setNote=setNote;
+window.bumpRange=bumpRange; window.bumpRoutine=bumpRoutine; window.togglePaid=togglePaid; window.calNav=calNav;
+window.addExam=addExam; window.editExam=editExam; window.delExam=delExam; window.addRange=addRange; window.delRange=delRange;
+window.editRangeDone=editRangeDone; window.addRoutine=addRoutine; window.toggleRoutine=toggleRoutine; window.delRoutine=delRoutine;
+window.expData=expData; window.impData=impData; window.resetAll=resetAll;
+window.openBlock=openBlock; window.startQuiz=startQuiz; window.ansMC=ansMC; window.submitIN=submitIN;
+window.nextQ=nextQ; window.backLearn=backLearn; window.setLearnDL=setLearnDL;
+window.openMistakes=openMistakes; window.removeMistake=removeMistake; window.startMNQuiz=startMNQuiz;
+window.lsToggle=lsToggle; window.lsNext=lsNext; window.lsPrev=lsPrev; window.lsMark=lsMark;
+window.lsTg=lsTg; window.lsSetPat=lsSetPat; window.lsSetNum=lsSetNum; window.lsSetMode=lsSetMode;
+window.lsTgLesson=lsTgLesson; window.lsTgKnown=lsTgKnown;
+render();
+</script>
+</body>
+</html>

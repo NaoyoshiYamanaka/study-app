@@ -1,0 +1,1 @@
+{"name": "学習スケジュール", "short_name": "学習管理", "start_url": "./index.html", "display": "standalone", "background_color": "#f4f6f9", "theme_color": "#2b7de9", "icons": [{"src": "icon-study.png", "sizes": "512x512", "type": "image/png"}]}
